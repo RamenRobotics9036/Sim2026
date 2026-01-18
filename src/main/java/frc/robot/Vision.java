@@ -78,6 +78,9 @@ public class Vision {
             // Create a PhotonCameraSim which will update the linked PhotonCamera's values with visible
             // targets.
             cameraSim = new PhotonCameraSim(camera, cameraProp);
+            // Set realistic detection range limits
+            cameraSim.setMinTargetAreaPixels(10.0); // Minimum pixel area for detection
+            cameraSim.setMaxSightRange(3.0); // Max detection distance in meters
             // Add the simulated camera to view the targets on this simulated field.
             visionSim.addCamera(cameraSim, kRobotToCam);
 
