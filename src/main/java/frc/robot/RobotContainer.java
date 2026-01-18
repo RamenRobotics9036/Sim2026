@@ -40,12 +40,18 @@ public class RobotContainer {
 
     private final CommandXboxController joystick = new CommandXboxController(0);
 
+    public PhotonVisionSim visionSim = null;
+
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
 
     /* Path follower */
     private final SendableChooser<Command> autoChooser;
 
     public RobotContainer() {
+        if (Robot.isSimulation()) {
+            visionSim = new PhotonVisionSim(drivetrain);
+        }
+
         autoChooser = AutoBuilder.buildAutoChooser("Tests");
         SmartDashboard.putData("Auto Mode", autoChooser);
 
@@ -110,6 +116,13 @@ public class RobotContainer {
 
         // Reset the field-centric heading on left bumper press.
         joystick.leftBumper().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
+
+        // In simulation, inject drift with right bumper to test vision correction
+        if (Robot.isSimulation() && visionSim != null) {
+            joystick.rightBumper().onTrue(drivetrain.runOnce(() ->
+                visionSim.injectDrift(0.5, 15.0)  // 0.5m translation, 15° rotation drift
+            ));
+        }
 
         drivetrain.registerTelemetry(logger::telemeterize);
     }

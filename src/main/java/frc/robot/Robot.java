@@ -90,15 +90,31 @@ public class Robot extends TimedRobot {
 
     @Override
     public void simulationPeriodic() {
-        // Update vision simulation with current robot pose
         var driveState = m_robotContainer.drivetrain.getState();
-        m_vision.simulationPeriodic(driveState.Pose);
+        var robotPoseHoldingCamera = driveState.Pose;
 
-        // Visualize estimated pose and module poses on field
+        if (m_robotContainer.visionSim != null) {
+            m_robotContainer.visionSim.simulationPeriodicPhotonSim();
+
+            // Update vision simulation with the ground truth robot pose (from physics)
+            // This ensures the camera sees AprilTags based on where the robot actually is,
+            // not where odometry thinks it is. This allows testing of vision correction.
+            robotPoseHoldingCamera = m_robotContainer.visionSim.getGroundTruthPose();
+        }
+
+        m_vision.simulationPeriodic(robotPoseHoldingCamera);
+
         var debugField = m_vision.getSimDebugField();
         if (debugField != null) {
+            // Show the estimated pose (what odometry thinks)
             debugField.getObject("EstimatedRobot").setPose(driveState.Pose);
             debugField.getObject("EstimatedRobotModules").setPoses(getModulePoses(driveState));
+
+            if (m_robotContainer.visionSim != null) {
+                // Show the ground truth pose (where the robot actually is in simulation)
+                debugField.getObject("GroundTruthRobot").setPose(
+                    m_robotContainer.visionSim.getGroundTruthPose());
+            }
         }
     }
 
