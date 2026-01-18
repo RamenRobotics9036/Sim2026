@@ -91,7 +91,7 @@ public class Constants {
 
 ## Files to Modify
 
-### 4. Update `src/main/java/frc/robot/Robot.java`
+### 4. ✅ Update `src/main/java/frc/robot/Robot.java`
 
 **Add imports:**
 ```java
@@ -140,7 +140,7 @@ public void simulationPeriodic() {
 
 ---
 
-### 5. Update `src/main/java/frc/robot/subsystems/CommandSwerveDrivetrain.java`
+### 5. ✅ Update `src/main/java/frc/robot/subsystems/CommandSwerveDrivetrain.java`
 
 The drivetrain already has `addVisionMeasurement()` methods - no changes needed!
 
