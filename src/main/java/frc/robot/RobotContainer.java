@@ -111,6 +111,13 @@ public class RobotContainer {
         // Reset the field-centric heading on left bumper press.
         joystick.leftBumper().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
 
+        // In simulation, inject drift with right bumper to test vision correction
+        if (Robot.isSimulation()) {
+            joystick.rightBumper().onTrue(drivetrain.runOnce(() ->
+                drivetrain.injectSimulatedDrift(0.5, 15.0)  // 0.5m translation, 15° rotation drift
+            ));
+        }
+
         drivetrain.registerTelemetry(logger::telemeterize);
     }
 
