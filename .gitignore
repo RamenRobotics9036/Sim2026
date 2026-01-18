@@ -170,8 +170,10 @@ out/
 
 # Simulation GUI and other tools window save file
 networktables.json
-simgui.json
 *-window.json
+
+# We DO track simgui.json since we have custom PNGs for our simulation
+#simgui.json
 
 # Simulation data log directory
 logs/
