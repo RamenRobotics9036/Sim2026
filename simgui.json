@@ -96,17 +96,22 @@
         "bottom": 1914,
         "cameras": {
           "arrowColor": [
-            0.29535865783691406,
-            1.0,
-            0.9910804033279419,
-            255.0
+            0.0,
+            0.0,
+            0.0,
+            0.0
           ],
-          "arrowSize": 19,
-          "arrowWeight": 3.0,
-          "length": 1.0,
-          "style": "Hidden",
-          "weight": 1.0,
-          "width": 1.0
+          "arrowSize": 0,
+          "arrowWeight": 0.0,
+          "color": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "length": 0.0,
+          "weight": 0.0,
+          "width": 0.0
         },
         "height": 8.069275856018066,
         "left": 245,
