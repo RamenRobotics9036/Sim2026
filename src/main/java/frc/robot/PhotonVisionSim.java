@@ -1,5 +1,9 @@
 package frc.robot;
 
+import com.ctre.phoenix6.hardware.CANcoder;
+import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.swerve.SwerveDrivetrain;
+
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
@@ -9,6 +13,19 @@ import edu.wpi.first.math.numbers.N3;
  * These values control how much the Kalman filter trusts odometry vs vision measurements.
  */
 public class PhotonVisionSim {
+
+    /**
+     * Constructs a PhotonVisionSim instance.
+     * This class is only intended for use in simulation.
+     *
+     * @throws IllegalStateException if called outside of simulation mode
+     */
+    public PhotonVisionSim() {
+        if (!Robot.isSimulation()) {
+            throw new IllegalStateException("PhotonVisionSim should only be instantiated in simulation mode");
+        }
+    }
+
     /**
      * Standard deviations for vision measurements (x meters, y meters, theta radians).
      * Lower values = more trust in vision measurements.
@@ -23,4 +40,15 @@ public class PhotonVisionSim {
             0.9    // theta standard deviation (radians)
         }
     );
+
+    /**
+     * Configures the drivetrain to trust vision measurements more than the default.
+     * This sets lower standard deviations for vision, making the Kalman filter
+     * weight vision corrections more heavily.
+     *
+     * @param drivetrain The swerve drivetrain to configure
+     */
+    public void setDrivetrainToTrustVisionMore(SwerveDrivetrain<TalonFX, TalonFX, CANcoder> drivetrain) {
+        drivetrain.setVisionMeasurementStdDevs(PhotonVisionSim.kVisionStandardDeviation);
+    }
 }

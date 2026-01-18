@@ -40,14 +40,18 @@ public class RobotContainer {
 
     private final CommandXboxController joystick = new CommandXboxController(0);
 
+    public PhotonVisionSim visionSim = null;
+
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
 
     /* Path follower */
     private final SendableChooser<Command> autoChooser;
 
     public RobotContainer() {
-        // For simulation, set the vision to be more trustworthy.
-        drivetrain.setVisionMeasurementStdDevs(PhotonVisionSim.kVisionStandardDeviation);
+        if (Robot.isSimulation()) {
+            visionSim = new PhotonVisionSim();
+            visionSim.setDrivetrainToTrustVisionMore(drivetrain);
+        }
 
         autoChooser = AutoBuilder.buildAutoChooser("Tests");
         SmartDashboard.putData("Auto Mode", autoChooser);
