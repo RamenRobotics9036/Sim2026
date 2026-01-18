@@ -33,7 +33,7 @@ public class PhotonVisionSim {
      * Note that the DEFAULT for VISION is [0.9, 0.9, 0.9] - which means dont trust vision too much.
      * The default for ODOMETRY is [0.1, 0.1, 0.1] - which means trust odometry a lot.
      */
-    public static final Matrix<N3, N1> kVisionStandardDeviation = new Matrix<>(
+    private static final Matrix<N3, N1> kVisionStandardDeviation = new Matrix<>(
         N3.instance, N1.instance, new double[] {
             0.5,   // x standard deviation (meters)
             0.5,   // y standard deviation (meters)
