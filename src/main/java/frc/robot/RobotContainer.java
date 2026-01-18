@@ -55,16 +55,31 @@ public class RobotContainer {
         FollowPathCommand.warmupCommand().schedule();
     }
 
+    private Command getJoystickCommandForPhysicalRobot() {
+        return drivetrain.applyRequest(() ->
+            drive.withVelocityX(-joystick.getLeftY() * MaxSpeed) // Drive forward with negative Y (forward)
+                .withVelocityY(-joystick.getLeftX() * MaxSpeed) // Drive left with negative X (left)
+                .withRotationalRate(-joystick.getRightX() * MaxAngularRate) // Drive counterclockwise with negative X (left)
+        );
+    }
+
+    // In simulation, we want the x and y of the field to match the x and y of the joystick.
+    private Command getJoystickCommandForSimRobot() {
+        return drivetrain.applyRequest(() ->
+            drive.withVelocityX(-joystick.getLeftX() * MaxSpeed) // Drive forward with negative X
+                .withVelocityY(joystick.getLeftY() * MaxSpeed) // Drive left with positive Y
+                .withRotationalRate(-joystick.getRightX() * MaxAngularRate) // Drive counterclockwise with negative X (left)
+        );
+    }
+
     private void configureBindings() {
         // Note that X is defined as forward according to WPILib convention,
         // and Y is defined as to the left according to WPILib convention.
         drivetrain.setDefaultCommand(
             // Drivetrain will execute this command periodically
-            drivetrain.applyRequest(() ->
-                drive.withVelocityX(-joystick.getLeftY() * MaxSpeed) // Drive forward with negative Y (forward)
-                    .withVelocityY(-joystick.getLeftX() * MaxSpeed) // Drive left with negative X (left)
-                    .withRotationalRate(-joystick.getRightX() * MaxAngularRate) // Drive counterclockwise with negative X (left)
-            )
+            Robot.isSimulation()
+                ? getJoystickCommandForSimRobot()
+                : getJoystickCommandForPhysicalRobot()
         );
 
         // Idle while the robot is disabled. This ensures the configured
