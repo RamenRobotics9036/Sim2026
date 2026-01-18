@@ -191,22 +191,6 @@ public class TunerConstants {
             kBackRightXPos, kBackRightYPos, kInvertRightSide, kBackRightSteerMotorInverted, kBackRightEncoderInverted
         );
 
-    // Standard deviations for odometry (x meters, y meters, theta radians)
-    // Higher values = less trust in odometry, more reliance on vision
-    // These are set high for simulation to test vision correction
-    private static final Matrix<N3, N1> kOdometryStandardDeviation = new Matrix<>(N3.instance, N1.instance, new double[] {
-        0.1,   // x standard deviation (meters)
-        0.1,   // y standard deviation (meters)
-        0.1    // theta standard deviation (radians)
-    });
-
-    // Standard deviations for vision measurements
-    private static final Matrix<N3, N1> kVisionStandardDeviation = new Matrix<>(N3.instance, N1.instance, new double[] {
-        0.5,   // x standard deviation (meters)
-        0.5,   // y standard deviation (meters)
-        0.9    // theta standard deviation (radians)
-    });
-
     /**
      * Creates a CommandSwerveDrivetrain instance.
      * This should only be called once in your robot program,.
@@ -215,8 +199,8 @@ public class TunerConstants {
         return new CommandSwerveDrivetrain(
             DrivetrainConstants,
             250.0, // odometry update frequency Hz
-            kOdometryStandardDeviation,
-            kVisionStandardDeviation,
+            frc.robot.PhotonVisionSim.kOdometryStandardDeviation,
+            frc.robot.PhotonVisionSim.kVisionStandardDeviation,
             FrontLeft, FrontRight, BackLeft, BackRight
         );
     }
