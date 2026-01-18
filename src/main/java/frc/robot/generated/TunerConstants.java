@@ -197,11 +197,7 @@ public class TunerConstants {
      */
     public static CommandSwerveDrivetrain createDrivetrain() {
         return new CommandSwerveDrivetrain(
-            DrivetrainConstants,
-            250.0, // odometry update frequency Hz
-            frc.robot.PhotonVisionSim.kOdometryStandardDeviation,
-            frc.robot.PhotonVisionSim.kVisionStandardDeviation,
-            FrontLeft, FrontRight, BackLeft, BackRight
+            DrivetrainConstants, FrontLeft, FrontRight, BackLeft, BackRight
         );
     }
 

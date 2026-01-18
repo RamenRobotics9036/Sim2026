@@ -46,6 +46,9 @@ public class RobotContainer {
     private final SendableChooser<Command> autoChooser;
 
     public RobotContainer() {
+        // For simulation, set the vision to be more trustworthy.
+        drivetrain.setVisionMeasurementStdDevs(PhotonVisionSim.kVisionStandardDeviation);
+
         autoChooser = AutoBuilder.buildAutoChooser("Tests");
         SmartDashboard.putData("Auto Mode", autoChooser);
 

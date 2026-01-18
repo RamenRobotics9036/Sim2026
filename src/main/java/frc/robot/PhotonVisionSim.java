@@ -9,23 +9,12 @@ import edu.wpi.first.math.numbers.N3;
  * These values control how much the Kalman filter trusts odometry vs vision measurements.
  */
 public class PhotonVisionSim {
-
-    /**
-     * Standard deviations for odometry measurements (x meters, y meters, theta radians).
-     * Higher values = less trust in odometry, more reliance on vision.
-     * These are set high for simulation to test vision correction.
-     */
-    public static final Matrix<N3, N1> kOdometryStandardDeviation = new Matrix<>(
-        N3.instance, N1.instance, new double[] {
-            0.1,   // x standard deviation (meters)
-            0.1,   // y standard deviation (meters)
-            0.1    // theta standard deviation (radians)
-        }
-    );
-
     /**
      * Standard deviations for vision measurements (x meters, y meters, theta radians).
      * Lower values = more trust in vision measurements.
+     *
+     * Note that the DEFAULT for VISION is [0.9, 0.9, 0.9] - which means dont trust vision too much.
+     * The default for ODOMETRY is [0.1, 0.1, 0.1] - which means trust odometry a lot.
      */
     public static final Matrix<N3, N1> kVisionStandardDeviation = new Matrix<>(
         N3.instance, N1.instance, new double[] {
