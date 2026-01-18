@@ -169,21 +169,5 @@ out/
 .fleet
 
 # Simulation GUI and other tools window save file
-networktables.json
 *-window.json
-
-# We DO track simgui.json since we have custom PNGs for our simulation
-#simgui.json
-
-# Simulation data log directory
-logs/
-
-# Folder that has CTRE Phoenix Sim device config storage
-ctre_sim/
-
-# clangd
-/.cache
-compile_commands.json
-
-# Eclipse generated file for annotation processors
-.factorypath
+networktables.json

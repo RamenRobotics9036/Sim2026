@@ -6,10 +6,13 @@ package frc.robot;
 
 import com.ctre.phoenix6.HootAutoReplay;
 
-import edu.wpi.first.math.util.Units;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Transform2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import frc.robot.generated.TunerConstants;
 
 public class Robot extends TimedRobot {
     private Command m_autonomousCommand;
@@ -21,10 +24,11 @@ public class Robot extends TimedRobot {
         .withTimestampReplay()
         .withJoystickReplay();
 
-    private final boolean kUseLimelight = false;
+    private final Vision m_vision;
 
     public Robot() {
         m_robotContainer = new RobotContainer();
+        m_vision = new Vision(m_robotContainer.drivetrain::addVisionMeasurement);
     }
 
     @Override
@@ -32,25 +36,8 @@ public class Robot extends TimedRobot {
         m_timeAndJoystickReplay.update();
         CommandScheduler.getInstance().run();
 
-        /*
-         * This example of adding Limelight is very simple and may not be sufficient for on-field use.
-         * Users typically need to provide a standard deviation that scales with the distance to target
-         * and changes with number of tags available.
-         *
-         * This example is sufficient to show that vision integration is possible, though exact implementation
-         * of how to use vision should be tuned per-robot and to the team's specification.
-         */
-        if (kUseLimelight) {
-            var driveState = m_robotContainer.drivetrain.getState();
-            double headingDeg = driveState.Pose.getRotation().getDegrees();
-            double omegaRps = Units.radiansToRotations(driveState.Speeds.omegaRadiansPerSecond);
-
-            LimelightHelpers.SetRobotOrientation("limelight", headingDeg, 0, 0, 0, 0, 0);
-            var llMeasurement = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2("limelight");
-            if (llMeasurement != null && llMeasurement.tagCount > 0 && Math.abs(omegaRps) < 2.0) {
-                m_robotContainer.drivetrain.addVisionMeasurement(llMeasurement.pose, llMeasurement.timestampSeconds);
-            }
-        }
+        // Update vision (processes camera results and updates pose estimator)
+        m_vision.periodic();
     }
 
     @Override
@@ -102,5 +89,37 @@ public class Robot extends TimedRobot {
     public void testExit() {}
 
     @Override
-    public void simulationPeriodic() {}
+    public void simulationPeriodic() {
+        // Update vision simulation with current robot pose
+        var driveState = m_robotContainer.drivetrain.getState();
+        m_vision.simulationPeriodic(driveState.Pose);
+
+        // Visualize estimated pose and module poses on field
+        var debugField = m_vision.getSimDebugField();
+        if (debugField != null) {
+            debugField.getObject("EstimatedRobot").setPose(driveState.Pose);
+            debugField.getObject("EstimatedRobotModules").setPoses(getModulePoses(driveState));
+        }
+    }
+
+    /**
+     * Get the Pose2d of each swerve module based on the current robot pose and module states.
+     */
+    private Pose2d[] getModulePoses(com.ctre.phoenix6.swerve.SwerveDrivetrain.SwerveDriveState driveState) {
+        // Module locations relative to robot center (from TunerConstants)
+        Translation2d[] moduleLocations = {
+            new Translation2d(TunerConstants.FrontLeft.LocationX, TunerConstants.FrontLeft.LocationY),
+            new Translation2d(TunerConstants.FrontRight.LocationX, TunerConstants.FrontRight.LocationY),
+            new Translation2d(TunerConstants.BackLeft.LocationX, TunerConstants.BackLeft.LocationY),
+            new Translation2d(TunerConstants.BackRight.LocationX, TunerConstants.BackRight.LocationY)
+        };
+
+        Pose2d[] modulePoses = new Pose2d[4];
+        for (int i = 0; i < 4; i++) {
+            modulePoses[i] = driveState.Pose.transformBy(
+                new Transform2d(moduleLocations[i], driveState.ModuleStates[i].angle)
+            );
+        }
+        return modulePoses;
+    }
 }
