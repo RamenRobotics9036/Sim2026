@@ -7,7 +7,7 @@ Add PhotonVision simulation support to the robot project, enabling AprilTag dete
 
 ## Prerequisites
 
-### 1. Add PhotonLib Vendor Dependency
+### 1. ✅ Add PhotonLib Vendor Dependency
 Download the PhotonLib JSON file to `vendordeps/`:
 ```bash
 cd vendordeps
@@ -20,7 +20,7 @@ Or use VS Code: `Ctrl+Shift+P` → "WPILib: Manage Vendor Libraries" → "Instal
 
 ## Files to Create
 
-### 2. Create `src/main/java/frc/robot/Vision.java`
+### 2. ✅ Create `src/main/java/frc/robot/Vision.java`
 
 Based on `src/photonexample/poseest/src/main/java/frc/robot/Vision.java`:
 
@@ -59,7 +59,7 @@ if (Robot.isSimulation()) {
 
 ---
 
-### 3. Add Vision Constants to `src/main/java/frc/robot/Constants.java`
+### 3. ✅ Add Vision Constants to `src/main/java/frc/robot/Constants.java`
 
 Create new file or add to existing constants:
 
