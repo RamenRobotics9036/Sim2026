@@ -5,16 +5,11 @@ import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.swerve.SwerveDrivetrain;
 
-import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import edu.wpi.first.math.numbers.N1;
-import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj2.command.button.Trigger;
 
-import frc.robot.subsystems.CommandSwerveDrivetrain;
 
 /**
  * Simulation helper for PhotonVision that tracks the ground truth robot pose
@@ -157,18 +152,5 @@ public class PhotonVisionSim {
         SmartDashboard.putNumber("Sim/PoseErrorMeters", poseError);
         SmartDashboard.putNumber("Sim/HeadingErrorDeg", headingError);
         SmartDashboard.putNumber("Sim/TotalDistanceTraveled", totalDistanceTraveled);
-    }
-
-    /**
-     * Adds a joystick binding to inject simulated drift when the button is pressed.
-     * This is useful for testing vision correction in simulation.
-     *
-     * @param button The trigger/button to bind the drift injection to
-     * @param drivetrain The command-based drivetrain (needed for runOnce command)
-     */
-    public void addDriftInjectionBinding(Trigger button, CommandSwerveDrivetrain drivetrain) {
-        button.onTrue(drivetrain.runOnce(() ->
-            injectDrift(0.5, 15.0)  // 0.5m translation, 15° rotation drift
-        ));
     }
 }
