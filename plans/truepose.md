@@ -119,38 +119,6 @@ public void simulationPeriodic() {
 
 ---
 
-### Option B: Keep Minimal Hook in CommandSwerveDrivetrain
-
-If `startSimThread()` timing is critical (4ms loop), keep a callback hook:
-
-```java
-// In CommandSwerveDrivetrain
-private Consumer<Double> simUpdateCallback = null;
-
-public void setSimUpdateCallback(Consumer<Double> callback) {
-    this.simUpdateCallback = callback;
-}
-
-// In startSimThread():
-if (simUpdateCallback != null) {
-    simUpdateCallback.accept(deltaTime);
-}
-```
-
-Then `PhotonVisionSim` registers itself to receive deltaTime updates.
-
----
-
-## Recommended Approach: Option A
-
-**Rationale**:
-1. `Robot.simulationPeriodic()` runs at 20ms (50Hz) which is sufficient for pose tracking
-2. Keeps CommandSwerveDrivetrain clean and focused on drivetrain concerns
-3. PhotonVisionSim becomes a self-contained simulation helper
-4. Easier to add/remove simulation features without touching core drivetrain code
-
----
-
 ## Migration Checklist
 
 - [ ] Add `drivetrain` field to PhotonVisionSim constructor
