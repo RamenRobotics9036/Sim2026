@@ -50,7 +50,6 @@ public class RobotContainer {
     public RobotContainer() {
         if (Robot.isSimulation()) {
             visionSim = new PhotonVisionSim(drivetrain);
-            visionSim.setDrivetrainToTrustVisionMore();
         }
 
         autoChooser = AutoBuilder.buildAutoChooser("Tests");

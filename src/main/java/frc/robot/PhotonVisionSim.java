@@ -36,21 +36,6 @@ public class PhotonVisionSim {
     private double lastUpdateTime;
 
     /**
-     * Standard deviations for vision measurements (x meters, y meters, theta radians).
-     * Lower values = more trust in vision measurements.
-     *
-     * Note that the DEFAULT for VISION is [0.9, 0.9, 0.9] - which means dont trust vision too much.
-     * The default for ODOMETRY is [0.1, 0.1, 0.1] - which means trust odometry a lot.
-     */
-    private static final Matrix<N3, N1> kVisionStandardDeviation = new Matrix<>(
-        N3.instance, N1.instance, new double[] {
-            0.5,   // x standard deviation (meters)
-            0.5,   // y standard deviation (meters)
-            0.9    // theta standard deviation (radians)
-        }
-    );
-
-    /**
      * Constructs a PhotonVisionSim instance.
      * This class is only intended for use in simulation.
      *
@@ -63,15 +48,6 @@ public class PhotonVisionSim {
         }
         this.drivetrain = drivetrain;
         this.lastUpdateTime = Utils.getCurrentTimeSeconds();
-    }
-
-    /**
-     * Configures the drivetrain to trust vision measurements more than the default.
-     * This sets lower standard deviations for vision, making the Kalman filter
-     * weight vision corrections more heavily.
-     */
-    public void setDrivetrainToTrustVisionMore() {
-        drivetrain.setVisionMeasurementStdDevs(kVisionStandardDeviation);
     }
 
     /**
