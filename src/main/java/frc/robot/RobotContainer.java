@@ -118,7 +118,7 @@ public class RobotContainer {
         joystick.leftBumper().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
 
         // In simulation, inject drift with right bumper to test vision correction
-        if (Robot.isSimulation()) {
+        if (Robot.isSimulation() && visionSim != null) {
             visionSim.addDriftInjectionBinding(joystick.rightBumper(), drivetrain);
         }
 
