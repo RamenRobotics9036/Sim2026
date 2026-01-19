@@ -1,30 +1,39 @@
 package frc.robot;
 
+import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.swerve.SwerveDrivetrain;
 
 import edu.wpi.first.math.Matrix;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
+
+import frc.robot.subsystems.CommandSwerveDrivetrain;
 
 /**
- * Constants for vision and odometry standard deviations used in pose estimation.
- * These values control how much the Kalman filter trusts odometry vs vision measurements.
+ * Simulation helper for PhotonVision that tracks the "true" robot pose
+ * independently of odometry drift. This allows testing vision correction
+ * by providing ground truth to the simulated cameras.
  */
 public class PhotonVisionSim {
 
-    /**
-     * Constructs a PhotonVisionSim instance.
-     * This class is only intended for use in simulation.
-     *
-     * @throws IllegalStateException if called outside of simulation mode
-     */
-    public PhotonVisionSim() {
-        if (!Robot.isSimulation()) {
-            throw new IllegalStateException("PhotonVisionSim should only be instantiated in simulation mode");
-        }
-    }
+    private final SwerveDrivetrain<TalonFX, TalonFX, CANcoder> drivetrain;
+
+    /** The "true" pose tracks where the robot actually is in simulation physics. */
+    private Pose2d truePose = new Pose2d();
+
+    /** Track accumulated distance for telemetry */
+    private double totalDistanceTraveled = 0.0;
+    private double totalRotation = 0.0;
+
+    /** Last update time for delta calculation */
+    private double lastUpdateTime;
 
     /**
      * Standard deviations for vision measurements (x meters, y meters, theta radians).
@@ -42,13 +51,148 @@ public class PhotonVisionSim {
     );
 
     /**
+     * Constructs a PhotonVisionSim instance.
+     * This class is only intended for use in simulation.
+     *
+     * @param drivetrain The swerve drivetrain to track and manipulate
+     * @throws IllegalStateException if called outside of simulation mode
+     */
+    public PhotonVisionSim(SwerveDrivetrain<TalonFX, TalonFX, CANcoder> drivetrain) {
+        if (!Robot.isSimulation()) {
+            throw new IllegalStateException("PhotonVisionSim should only be instantiated in simulation mode");
+        }
+        this.drivetrain = drivetrain;
+        this.lastUpdateTime = Utils.getCurrentTimeSeconds();
+    }
+
+    /**
      * Configures the drivetrain to trust vision measurements more than the default.
      * This sets lower standard deviations for vision, making the Kalman filter
      * weight vision corrections more heavily.
-     *
-     * @param drivetrain The swerve drivetrain to configure
      */
-    public void setDrivetrainToTrustVisionMore(SwerveDrivetrain<TalonFX, TalonFX, CANcoder> drivetrain) {
-        drivetrain.setVisionMeasurementStdDevs(PhotonVisionSim.kVisionStandardDeviation);
+    public void setDrivetrainToTrustVisionMore() {
+        drivetrain.setVisionMeasurementStdDevs(kVisionStandardDeviation);
+    }
+
+    /**
+     * Updates the true pose by integrating chassis speeds.
+     * Call this from Robot.simulationPeriodic().
+     */
+    public void updateTruePose() {
+        double currentTime = Utils.getCurrentTimeSeconds();
+        double deltaTime = currentTime - lastUpdateTime;
+        lastUpdateTime = currentTime;
+
+        ChassisSpeeds speeds = drivetrain.getState().Speeds;
+
+        // Calculate how much the robot moved this timestep
+        double dx = speeds.vxMetersPerSecond * deltaTime;
+        double dy = speeds.vyMetersPerSecond * deltaTime;
+        double dtheta = speeds.omegaRadiansPerSecond * deltaTime;
+
+        double distanceThisStep = Math.hypot(dx, dy);
+        double rotationThisStep = Math.abs(dtheta);
+
+        totalDistanceTraveled += distanceThisStep;
+        totalRotation += rotationThisStep;
+
+        // Update the true pose (using field-relative velocities)
+        // Rotate the robot-relative velocity by the current heading to get field-relative
+        double cos = Math.cos(truePose.getRotation().getRadians());
+        double sin = Math.sin(truePose.getRotation().getRadians());
+        double fieldDx = dx * cos - dy * sin;
+        double fieldDy = dx * sin + dy * cos;
+
+        truePose = new Pose2d(
+            truePose.getX() + fieldDx,
+            truePose.getY() + fieldDy,
+            truePose.getRotation().plus(new Rotation2d(dtheta))
+        );
+    }
+
+    /**
+     * Gets the true simulated pose (where the robot actually is based on physics).
+     * Use this for PhotonVision simulation so cameras see the correct AprilTags.
+     *
+     * @return The true pose of the robot in simulation
+     */
+    public Pose2d getTruePose() {
+        return truePose;
+    }
+
+    /**
+     * Resets the true simulated pose to match the current estimated pose.
+     * Call this when you reset the robot pose.
+     */
+    public void resetTruePose() {
+        truePose = drivetrain.getState().Pose;
+        totalDistanceTraveled = 0.0;
+        totalRotation = 0.0;
+    }
+
+    /**
+     * Introduces simulated odometry drift by offsetting the pose estimator.
+     * The "true" pose remains unchanged, but the pose estimator
+     * is reset to a drifted position. Vision should then correct this drift.
+     *
+     * @param translationOffsetMeters How far to offset the estimated position (meters)
+     * @param rotationOffsetDegrees How far to offset the estimated heading (degrees)
+     */
+    public void injectDrift(double translationOffsetMeters, double rotationOffsetDegrees) {
+        // Get current estimated pose
+        Pose2d currentPose = drivetrain.getState().Pose;
+
+        // Create offset - add random direction for translation
+        double angle = Math.random() * 2 * Math.PI;
+        double dx = translationOffsetMeters * Math.cos(angle);
+        double dy = translationOffsetMeters * Math.sin(angle);
+
+        // Apply random sign to rotation
+        double dtheta = rotationOffsetDegrees * (Math.random() > 0.5 ? 1 : -1);
+
+        // Create the drifted pose
+        Pose2d driftedPose = new Pose2d(
+            currentPose.getX() + dx,
+            currentPose.getY() + dy,
+            currentPose.getRotation().plus(Rotation2d.fromDegrees(dtheta))
+        );
+
+        // Reset the pose estimator to the drifted position
+        // The true pose remains at the actual position
+        drivetrain.resetPose(driftedPose);
+    }
+
+    /**
+     * Publishes simulation telemetry to SmartDashboard.
+     * Call this from Robot.simulationPeriodic().
+     */
+    public void publishTelemetry() {
+        SmartDashboard.putNumber("Sim/TruePose/X", truePose.getX());
+        SmartDashboard.putNumber("Sim/TruePose/Y", truePose.getY());
+        SmartDashboard.putNumber("Sim/TruePose/RotationDeg", truePose.getRotation().getDegrees());
+
+        Pose2d estimatedPose = drivetrain.getState().Pose;
+        SmartDashboard.putNumber("Sim/EstimatedPose/X", estimatedPose.getX());
+        SmartDashboard.putNumber("Sim/EstimatedPose/Y", estimatedPose.getY());
+        SmartDashboard.putNumber("Sim/EstimatedPose/RotationDeg", estimatedPose.getRotation().getDegrees());
+
+        double poseError = truePose.getTranslation().getDistance(estimatedPose.getTranslation());
+        double headingError = Math.abs(truePose.getRotation().minus(estimatedPose.getRotation()).getDegrees());
+        SmartDashboard.putNumber("Sim/PoseErrorMeters", poseError);
+        SmartDashboard.putNumber("Sim/HeadingErrorDeg", headingError);
+        SmartDashboard.putNumber("Sim/TotalDistanceTraveled", totalDistanceTraveled);
+    }
+
+    /**
+     * Adds a joystick binding to inject simulated drift when the button is pressed.
+     * This is useful for testing vision correction in simulation.
+     *
+     * @param button The trigger/button to bind the drift injection to
+     * @param drivetrain The command-based drivetrain (needed for runOnce command)
+     */
+    public void addDriftInjectionBinding(Trigger button, CommandSwerveDrivetrain drivetrain) {
+        button.onTrue(drivetrain.runOnce(() ->
+            injectDrift(0.5, 15.0)  // 0.5m translation, 15° rotation drift
+        ));
     }
 }

@@ -90,11 +90,17 @@ public class Robot extends TimedRobot {
 
     @Override
     public void simulationPeriodic() {
+        // Update the true pose tracking in PhotonVisionSim
+        m_robotContainer.visionSim.updateTruePose();
+
         // Update vision simulation with the TRUE robot pose (ground truth from physics)
         // This ensures the camera sees AprilTags based on where the robot actually is,
         // not where odometry thinks it is. This allows testing of vision correction.
-        Pose2d truePose = m_robotContainer.drivetrain.getSimTruePose();
+        Pose2d truePose = m_robotContainer.visionSim.getTruePose();
         m_vision.simulationPeriodic(truePose);
+
+        // Publish simulation telemetry (pose errors, etc.)
+        m_robotContainer.visionSim.publishTelemetry();
 
         // Visualize both the true pose and estimated pose on field
         var driveState = m_robotContainer.drivetrain.getState();

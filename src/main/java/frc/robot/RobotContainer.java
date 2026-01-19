@@ -49,8 +49,8 @@ public class RobotContainer {
 
     public RobotContainer() {
         if (Robot.isSimulation()) {
-            visionSim = new PhotonVisionSim();
-            visionSim.setDrivetrainToTrustVisionMore(drivetrain);
+            visionSim = new PhotonVisionSim(drivetrain);
+            visionSim.setDrivetrainToTrustVisionMore();
         }
 
         autoChooser = AutoBuilder.buildAutoChooser("Tests");
@@ -120,9 +120,7 @@ public class RobotContainer {
 
         // In simulation, inject drift with right bumper to test vision correction
         if (Robot.isSimulation()) {
-            joystick.rightBumper().onTrue(drivetrain.runOnce(() ->
-                drivetrain.injectSimulatedDrift(0.5, 15.0)  // 0.5m translation, 15° rotation drift
-            ));
+            visionSim.addDriftInjectionBinding(joystick.rightBumper(), drivetrain);
         }
 
         drivetrain.registerTelemetry(logger::telemeterize);

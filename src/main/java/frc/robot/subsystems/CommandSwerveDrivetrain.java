@@ -26,7 +26,6 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotController;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
@@ -44,24 +43,6 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     private static final double kSimLoopPeriod = 0.004; // 4 ms
     private Notifier m_simNotifier = null;
     private double m_lastSimTime;
-
-    /*
-     * Simulation noise parameters - adjust these to control how imperfect the odometry is.
-     * Higher values = more drift = vision corrections are more visible.
-     * Set to 0 to disable drift (perfect odometry).
-     */
-    private static final double kSimTranslationDriftMetersPerMeter = 0.02;  // 2% translation drift per meter traveled
-    private static final double kSimRotationDriftDegreesPerDegree = 0.02;   // 2% rotation drift per degree turned
-
-    /**
-     * The "true" pose tracks where the robot actually is in simulation physics.
-     * We integrate chassis speeds to track this independently of odometry drift.
-     */
-    private Pose2d m_simTruePose = new Pose2d();
-
-    /** Track accumulated odometry drift for telemetry */
-    private double m_simTotalDistanceTraveled = 0.0;
-    private double m_simTotalRotation = 0.0;
 
     /* Blue alliance sees forward as 0 degrees (toward red alliance wall) */
     private static final Rotation2d kBlueAlliancePerspectiveRotation = Rotation2d.kZero;
@@ -299,24 +280,6 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
                 m_hasAppliedOperatorPerspective = true;
             });
         }
-
-        /* Publish simulation drift info for visualization */
-        if (Utils.isSimulation()) {
-            SmartDashboard.putNumber("Sim/TruePose/X", m_simTruePose.getX());
-            SmartDashboard.putNumber("Sim/TruePose/Y", m_simTruePose.getY());
-            SmartDashboard.putNumber("Sim/TruePose/RotationDeg", m_simTruePose.getRotation().getDegrees());
-
-            Pose2d estimatedPose = getState().Pose;
-            SmartDashboard.putNumber("Sim/EstimatedPose/X", estimatedPose.getX());
-            SmartDashboard.putNumber("Sim/EstimatedPose/Y", estimatedPose.getY());
-            SmartDashboard.putNumber("Sim/EstimatedPose/RotationDeg", estimatedPose.getRotation().getDegrees());
-
-            double poseError = m_simTruePose.getTranslation().getDistance(estimatedPose.getTranslation());
-            double headingError = Math.abs(m_simTruePose.getRotation().minus(estimatedPose.getRotation()).getDegrees());
-            SmartDashboard.putNumber("Sim/PoseErrorMeters", poseError);
-            SmartDashboard.putNumber("Sim/HeadingErrorDeg", headingError);
-            SmartDashboard.putNumber("Sim/TotalDistanceTraveled", m_simTotalDistanceTraveled);
-        }
     }
 
     private void startSimThread() {
@@ -328,99 +291,10 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
             double deltaTime = currentTime - m_lastSimTime;
             m_lastSimTime = currentTime;
 
-            /*
-             * Track the true pose by integrating robot velocities ourselves.
-             * This is independent of the CTRE odometry which we'll make drifty.
-             */
-            ChassisSpeeds speeds = getState().Speeds;
-
-            // Calculate how much the robot moved this timestep
-            double dx = speeds.vxMetersPerSecond * deltaTime;
-            double dy = speeds.vyMetersPerSecond * deltaTime;
-            double dtheta = speeds.omegaRadiansPerSecond * deltaTime;
-
-            double distanceThisStep = Math.hypot(dx, dy);
-            double rotationThisStep = Math.abs(dtheta);
-
-            m_simTotalDistanceTraveled += distanceThisStep;
-            m_simTotalRotation += rotationThisStep;
-
-            // Update the true pose (using field-relative velocities)
-            // Rotate the robot-relative velocity by the current heading to get field-relative
-            double cos = Math.cos(m_simTruePose.getRotation().getRadians());
-            double sin = Math.sin(m_simTruePose.getRotation().getRadians());
-            double fieldDx = dx * cos - dy * sin;
-            double fieldDy = dx * sin + dy * cos;
-
-            m_simTruePose = new Pose2d(
-                m_simTruePose.getX() + fieldDx,
-                m_simTruePose.getY() + fieldDy,
-                m_simTruePose.getRotation().plus(new Rotation2d(dtheta))
-            );
-
             /* use the measured time delta, get battery voltage from WPILib */
             updateSimState(deltaTime, RobotController.getBatteryVoltage());
         });
         m_simNotifier.startPeriodic(kSimLoopPeriod);
-    }
-
-    /**
-     * Gets the true simulated pose (where the robot actually is based on physics).
-     * This is tracked independently by integrating chassis speeds.
-     * Use this for PhotonVision simulation so cameras see the correct AprilTags.
-     * Only meaningful in simulation.
-     *
-     * @return The true pose of the robot in simulation
-     */
-    public Pose2d getSimTruePose() {
-        return m_simTruePose;
-    }
-
-    /**
-     * Resets the true simulated pose to match the current estimated pose.
-     * Call this when you reset the robot pose.
-     */
-    public void resetSimTruePose() {
-        m_simTruePose = getState().Pose;
-        m_simTotalDistanceTraveled = 0.0;
-        m_simTotalRotation = 0.0;
-    }
-
-    /**
-     * Introduces simulated odometry drift by offsetting the pose estimator.
-     * The "true" pose (tracked internally) remains unchanged, but the pose estimator
-     * is reset to a drifted position. Vision should then correct this drift.
-     *
-     * This is useful for testing vision correction in simulation.
-     * Only has an effect in simulation mode.
-     *
-     * @param translationOffsetMeters How far to offset the estimated position (meters)
-     * @param rotationOffsetDegrees How far to offset the estimated heading (degrees)
-     */
-    public void injectSimulatedDrift(double translationOffsetMeters, double rotationOffsetDegrees) {
-        if (!Utils.isSimulation()) return;
-
-        // Get current estimated pose
-        Pose2d currentPose = getState().Pose;
-
-        // Create offset - add random direction for translation
-        double angle = Math.random() * 2 * Math.PI;
-        double dx = translationOffsetMeters * Math.cos(angle);
-        double dy = translationOffsetMeters * Math.sin(angle);
-
-        // Apply random sign to rotation
-        double dtheta = rotationOffsetDegrees * (Math.random() > 0.5 ? 1 : -1);
-
-        // Create the drifted pose
-        Pose2d driftedPose = new Pose2d(
-            currentPose.getX() + dx,
-            currentPose.getY() + dy,
-            currentPose.getRotation().plus(Rotation2d.fromDegrees(dtheta))
-        );
-
-        // Reset the pose estimator to the drifted position
-        // The true pose (m_simTruePose) remains at the actual position
-        resetPose(driftedPose);
     }
 
     /**
