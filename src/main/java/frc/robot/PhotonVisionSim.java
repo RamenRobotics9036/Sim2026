@@ -153,4 +153,16 @@ public class PhotonVisionSim {
         SmartDashboard.putNumber("Sim/HeadingErrorDeg", headingError);
         SmartDashboard.putNumber("Sim/TotalDistanceTraveled", totalDistanceTraveled);
     }
+
+    /**
+     * Updates ground truth pose, runs vision simulation, and publishes telemetry.
+     * Call this from Robot.simulationPeriodic().
+     */
+    public void simulationPeriodicPhotonSim() {
+        // Update the ground truth pose tracking
+        updateGroundTruthPose();
+
+        // Publish simulation telemetry (pose errors, etc.)
+        publishTelemetry();
+    }
 }

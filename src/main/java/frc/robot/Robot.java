@@ -90,27 +90,31 @@ public class Robot extends TimedRobot {
 
     @Override
     public void simulationPeriodic() {
-        // Update the ground truth pose tracking in PhotonVisionSim
-        m_robotContainer.visionSim.updateGroundTruthPose();
-
-        // Update vision simulation with the ground truth robot pose (from physics)
-        // This ensures the camera sees AprilTags based on where the robot actually is,
-        // not where odometry thinks it is. This allows testing of vision correction.
-        Pose2d groundTruthPose = m_robotContainer.visionSim.getGroundTruthPose();
-        m_vision.simulationPeriodic(groundTruthPose);
-
-        // Publish simulation telemetry (pose errors, etc.)
-        m_robotContainer.visionSim.publishTelemetry();
-
-        // Visualize both the true pose and estimated pose on field
         var driveState = m_robotContainer.drivetrain.getState();
+        var robotPoseHoldingCamera = driveState.Pose;
+
+        if (m_robotContainer.visionSim != null) {
+            m_robotContainer.visionSim.simulationPeriodicPhotonSim();
+
+            // Update vision simulation with the ground truth robot pose (from physics)
+            // This ensures the camera sees AprilTags based on where the robot actually is,
+            // not where odometry thinks it is. This allows testing of vision correction.
+            robotPoseHoldingCamera = m_robotContainer.visionSim.getGroundTruthPose();
+        }
+
+        m_vision.simulationPeriodic(robotPoseHoldingCamera);
+
         var debugField = m_vision.getSimDebugField();
         if (debugField != null) {
             // Show the estimated pose (what odometry thinks)
             debugField.getObject("EstimatedRobot").setPose(driveState.Pose);
             debugField.getObject("EstimatedRobotModules").setPoses(getModulePoses(driveState));
-            // Show the ground truth pose (where the robot actually is in simulation)
-            debugField.getObject("GroundTruthRobot").setPose(groundTruthPose);
+
+            if (m_robotContainer.visionSim != null) {
+                // Show the ground truth pose (where the robot actually is in simulation)
+                debugField.getObject("GroundTruthRobot").setPose(
+                    m_robotContainer.visionSim.getGroundTruthPose());
+            }
         }
     }
 
