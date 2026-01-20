@@ -33,6 +33,13 @@ public class PhotonVisionSim {
     /** Last update time for delta calculation */
     private double lastUpdateTime;
 
+    /** Timeout in seconds before cycle resets to beginning */
+    private static final double CYCLE_TIMEOUT_SECONDS = 2.0;
+    private double lastCycleTime = 0.0;
+
+    /** Current position in the reset cycle (0-N) */
+    private int currrentCycleState = 0;
+
     /**
      * Constructs a PhotonVisionSim instance.
      * This class is only intended for use in simulation.
@@ -131,16 +138,56 @@ public class PhotonVisionSim {
     }
 
     /**
-     * Resets both poses to a PathPlanner auto starting pose, flipping for red alliance if needed.
-     * PathPlanner paths are designed for blue alliance origin; this mirrors the pose when on red.
+     * Resets both poses to a PathPlanner auto starting pose, optionally flipping based on alliance.
+     * PathPlanner paths are designed for blue alliance origin.
      *
      * @param blueAlliancePose The pose as defined in PathPlanner (blue alliance origin)
+     * @param useCorrectTeamSide If true, places robot on correct alliance side (flips for red).
+     *                           If false, places robot on the wrong side of the field.
      */
-    public void resetAllPosesToSelectedAutoPos(Pose2d blueAlliancePose) {
-        Pose2d pose = isRedAlliance()
+    public void resetAllPosesToSelectedAutoPos(Pose2d blueAlliancePose, boolean useCorrectTeamSide) {
+        boolean shouldFlipPose = isRedAlliance();
+        if (!useCorrectTeamSide) {
+            shouldFlipPose = !shouldFlipPose;
+        }
+
+        Pose2d pose = shouldFlipPose
             ? FlippingUtil.flipFieldPose(blueAlliancePose)
             : blueAlliancePose;
         resetAllPoses(pose);
+    }
+
+    /**
+     * Cycles through reset positions each time it's called.
+     * Cycle order:
+     *   0: Auto starting pose on correct alliance side
+     *   1: Auto starting pose on wrong alliance side
+     *   2: Origin on correct alliance side
+     *   3: Origin on wrong alliance side
+     *
+     * If CYCLE_TIMEOUT_SECONDS elapses between calls, restarts from 0.
+     *
+     * @param blueAlliancePose The auto starting pose (blue alliance origin)
+     */
+    public void cycleResetPosition(Pose2d blueAlliancePose) {
+        double currentTime = Utils.getCurrentTimeSeconds();
+
+        // Reset cycle if timeout elapsed
+        if (currentTime - lastCycleTime > CYCLE_TIMEOUT_SECONDS) {
+            currrentCycleState = 0;
+        }
+        lastCycleTime = currentTime;
+
+        // Execute based on current cycle state
+        switch (currrentCycleState) {
+            case 0 -> resetAllPosesToSelectedAutoPos(blueAlliancePose, true);
+            case 1 -> resetAllPosesToSelectedAutoPos(blueAlliancePose, false);
+            case 2 -> resetAllPosesToSelectedAutoPos(new Pose2d(), true);
+            case 3 -> resetAllPosesToSelectedAutoPos(new Pose2d(), false);
+        }
+
+        // Advance to next state
+        currrentCycleState = (currrentCycleState + 1) % 4;
     }
 
     /**
