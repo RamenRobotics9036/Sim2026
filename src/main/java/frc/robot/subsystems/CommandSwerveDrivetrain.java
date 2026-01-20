@@ -51,6 +51,10 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     /* Keep track if we've ever applied the operator perspective before or not */
     private boolean m_hasAppliedOperatorPerspective = false;
 
+    /* Track the last time the pose was reset to filter stale vision measurements.
+     * Initialized to a time far in the past so vision works immediately on startup. */
+    private double m_lastResetTimestamp = -100000.0;
+
     /** Swerve request to apply during robot-centric path following */
     private final SwerveRequest.ApplyRobotSpeeds m_pathApplyRobotSpeeds = new SwerveRequest.ApplyRobotSpeeds();
 
@@ -298,15 +302,57 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     }
 
     /**
+     * Resets the pose of the robot. Also updates the reset timestamp to filter
+     * stale vision measurements captured before this reset.
+     *
+     * @param pose The pose to reset to
+     */
+    @Override
+    public void resetPose(Pose2d pose) {
+        m_lastResetTimestamp = Utils.getCurrentTimeSeconds();
+        super.resetPose(pose);
+    }
+
+    /**
      * Adds a vision measurement to the Kalman Filter. This will correct the odometry pose estimate
      * while still accounting for measurement noise.
+     * <p>
+     * Measurements with timestamps near the last pose reset are ignored to prevent
+     * stale vision data from corrupting the freshly reset pose.
+     * <p>
+     * <b>Why we filter vision measurements around pose resets:</b>
+     * <p>
+     * There is a timing issue where vision measurements captured BEFORE a pose reset can be
+     * processed and injected AFTER the reset occurs. Here's the sequence that causes problems:
+     * <ol>
+     *   <li>Camera captures frame at time T=1.0s, sees AprilTags, calculates robot is at (5, 3)</li>
+     *   <li>User presses reset button at T=1.05s during CommandScheduler.run()</li>
+     *   <li>drivetrain.resetPose() is called, setting pose to (0, 0) and clearing Kalman filter state</li>
+     *   <li>Vision.periodic() runs AFTER CommandScheduler.run() in the same robot loop</li>
+     *   <li>Vision processes the camera frame from T=1.0s (captured BEFORE reset)</li>
+     *   <li>addVisionMeasurement() is called with pose=(5,3) and timestamp=1.0s</li>
+     *   <li>The pose estimator applies latency compensation: "At T=1.0s you were at (5,3)"</li>
+     *   <li>This "correction" pulls the freshly reset pose back toward (5, 3) - the jump!</li>
+     * </ol>
+     * <p>
+     * The fix: Ignore any vision measurements with timestamps within a window around the last
+     * reset time. This allows stale frames in the camera pipeline to be discarded, and gives
+     * the pose estimator time to stabilize before vision corrections resume.
      *
      * @param visionRobotPoseMeters The pose of the robot as measured by the vision camera.
-     * @param timestampSeconds The timestamp of the vision measurement in seconds.
+     * @param timestampSeconds The timestamp of the vision measurement in seconds (FPGA time).
      */
     @Override
     public void addVisionMeasurement(Pose2d visionRobotPoseMeters, double timestampSeconds) {
-        super.addVisionMeasurement(visionRobotPoseMeters, Utils.fpgaToCurrentTime(timestampSeconds));
+        // Filter out measurements captured near a pose reset (before or after)
+        double convertedTimestamp = Utils.fpgaToCurrentTime(timestampSeconds);
+        double ignoreWindowStart = m_lastResetTimestamp - 2.0;
+        double ignoreWindowEnd = m_lastResetTimestamp + 2.0;
+
+        if (convertedTimestamp >= ignoreWindowStart && convertedTimestamp <= ignoreWindowEnd) {
+            return;
+        }
+        super.addVisionMeasurement(visionRobotPoseMeters, convertedTimestamp);
     }
 
     /**
@@ -322,13 +368,33 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
      * @param visionMeasurementStdDevs Standard deviations of the vision pose measurement
      *     in the form [x, y, theta]ᵀ, with units in meters and radians.
      */
+    /**
+     * Adds a vision measurement to the Kalman Filter. This will correct the odometry pose estimate
+     * while still accounting for measurement noise.
+     * <p>
+     * Measurements with timestamps before the last pose reset are ignored to prevent
+     * stale vision data from corrupting the freshly reset pose.
+     *
+     * @param visionRobotPoseMeters The pose of the robot as measured by the vision camera.
+     * @param timestampSeconds The timestamp of the vision measurement in seconds (FPGA time).
+     * @param visionMeasurementStdDevs Standard deviations of the vision pose measurement
+     *     in the form [x, y, theta]ᵀ, with units in meters and radians.
+     */
     @Override
     public void addVisionMeasurement(
         Pose2d visionRobotPoseMeters,
         double timestampSeconds,
         Matrix<N3, N1> visionMeasurementStdDevs
     ) {
-        super.addVisionMeasurement(visionRobotPoseMeters, Utils.fpgaToCurrentTime(timestampSeconds), visionMeasurementStdDevs);
+        // Filter out measurements captured near a pose reset (before or after)
+        double convertedTimestamp = Utils.fpgaToCurrentTime(timestampSeconds);
+        double ignoreWindowStart = m_lastResetTimestamp - 2.0;
+        double ignoreWindowEnd = m_lastResetTimestamp + 2.0;
+
+        if (convertedTimestamp >= ignoreWindowStart && convertedTimestamp <= ignoreWindowEnd) {
+            return;
+        }
+        super.addVisionMeasurement(visionRobotPoseMeters, convertedTimestamp, visionMeasurementStdDevs);
     }
 
     /**
