@@ -11,7 +11,9 @@ import com.ctre.phoenix6.swerve.SwerveRequest;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.commands.FollowPathCommand;
+import com.pathplanner.lib.commands.PathPlannerAuto;
 
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -47,13 +49,16 @@ public class RobotContainer {
     /* Path follower */
     private final SendableChooser<Command> autoChooser;
 
+    /** Stores the starting pose of the currently selected auto */
+    private Pose2d selectedAutoStartingPose = new Pose2d();
+
     public RobotContainer() {
         if (Robot.isSimulation()) {
             visionSim = new PhotonVisionSim(drivetrain);
         }
 
         autoChooser = AutoBuilder.buildAutoChooser("Tests");
-        SmartDashboard.putData("Auto Mode", autoChooser);
+        initAutoSelector();
 
         configureBindings();
 
@@ -120,8 +125,10 @@ public class RobotContainer {
                 visionSim.injectDrift(0.5, 15.0)  // 0.5m translation, 15° rotation drift
             ));
 
-            // Left bumber resets all poses
-            joystick.leftBumper().onTrue(drivetrain.runOnce(() -> visionSim.resetAllPoses()));
+            // Left bumper resets robot to the starting pose of the selected auto
+            joystick.leftBumper().onTrue(drivetrain.runOnce(() ->
+                visionSim.resetAllPoses(selectedAutoStartingPose)
+            ));
         }
 
         drivetrain.registerTelemetry(logger::telemeterize);
@@ -130,5 +137,32 @@ public class RobotContainer {
     public Command getAutonomousCommand() {
         /* Run the path selected from the auto chooser */
         return autoChooser.getSelected();
+    }
+
+    /**
+     * Initializes the auto selector and publishes it to SmartDashboard.
+     */
+    private void initAutoSelector() {
+        SmartDashboard.putData("Auto Mode", autoChooser);
+
+        // Update starting pose when auto selection changes
+        autoChooser.onChange(this::onNewAutoSelected);
+
+        // Initialize starting pose from default selection
+        onNewAutoSelected(autoChooser.getSelected());
+    }
+
+    /**
+     * Called when a new auto is selected from the chooser.
+     * Updates the starting pose for simulation reset.
+     */
+    private void onNewAutoSelected(Command command) {
+        if (command instanceof PathPlannerAuto auto) {
+            Pose2d pose = auto.getStartingPose();
+            selectedAutoStartingPose = pose != null ? pose : new Pose2d();
+        } else {
+            // "None" selection is an InstantCommand - reset to origin
+            selectedAutoStartingPose = new Pose2d();
+        }
     }
 }
