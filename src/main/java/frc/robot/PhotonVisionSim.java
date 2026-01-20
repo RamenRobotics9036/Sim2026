@@ -115,17 +115,6 @@ public class PhotonVisionSim {
     //}
 
     /**
-     * Resets both the ground truth pose and the drivetrain pose to the origin.
-     * Useful for resetting the simulation to a known state.
-     */
-    public void resetAllPoses() {
-        groundTruthPose = new Pose2d();
-        drivetrain.resetPose(new Pose2d());
-        totalDistanceTraveled = 0.0;
-        totalRotation = 0.0;
-    }
-
-    /**
      * Resets both the ground truth pose and the drivetrain pose to the specified pose.
      *
      * @param pose The pose to reset both ground truth and drivetrain to
