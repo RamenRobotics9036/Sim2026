@@ -4,10 +4,13 @@ import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.swerve.SwerveDrivetrain;
+import com.pathplanner.lib.util.FlippingUtil;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 
@@ -126,6 +129,27 @@ public class PhotonVisionSim {
         totalDistanceTraveled = 0.0;
         totalRotation = 0.0;
     }
+
+    /**
+     * Resets both poses to a PathPlanner auto starting pose, flipping for red alliance if needed.
+     * PathPlanner paths are designed for blue alliance origin; this mirrors the pose when on red.
+     *
+     * @param blueAlliancePose The pose as defined in PathPlanner (blue alliance origin)
+     */
+    public void resetAllPosesToSelectedAutoPos(Pose2d blueAlliancePose) {
+        Pose2d pose = isRedAlliance()
+            ? FlippingUtil.flipFieldPose(blueAlliancePose)
+            : blueAlliancePose;
+        resetAllPoses(pose);
+    }
+
+    /**
+     * @return true if the robot is currently configured as red alliance
+     */
+    private boolean isRedAlliance() {
+        return DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red;
+    }
+
 
     /**
      * Introduces simulated odometry drift by offsetting the pose estimator.

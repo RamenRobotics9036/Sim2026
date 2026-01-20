@@ -127,7 +127,7 @@ public class RobotContainer {
 
             // Left bumper resets robot to the starting pose of the selected auto
             joystick.leftBumper().onTrue(drivetrain.runOnce(() ->
-                visionSim.resetAllPoses(selectedAutoStartingPose)
+                visionSim.resetAllPosesToSelectedAutoPos(selectedAutoStartingPose)
             ));
         }
 
