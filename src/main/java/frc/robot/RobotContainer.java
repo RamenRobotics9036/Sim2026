@@ -114,14 +114,14 @@ public class RobotContainer {
         joystick.start().and(joystick.y()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
         joystick.start().and(joystick.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
 
-        // Reset the field-centric heading on left bumper press.
-        joystick.leftBumper().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
-
-        // In simulation, inject drift with right bumper to test vision correction
         if (Robot.isSimulation() && visionSim != null) {
+            // In simulation, inject drift with right bumper to test vision correction
             joystick.rightBumper().onTrue(drivetrain.runOnce(() ->
                 visionSim.injectDrift(0.5, 15.0)  // 0.5m translation, 15° rotation drift
             ));
+
+            // Left bumber resets all poses
+            joystick.leftBumper().onTrue(drivetrain.runOnce(() -> visionSim.resetAllPoses()));
         }
 
         drivetrain.registerTelemetry(logger::telemeterize);
