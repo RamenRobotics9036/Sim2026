@@ -29,6 +29,9 @@ public class Robot extends TimedRobot {
     public Robot() {
         m_robotContainer = new RobotContainer();
         m_vision = new Vision(m_robotContainer.drivetrain::addVisionMeasurement);
+
+        // Set the vision resetter so pose resets also reset vision simulation
+        m_robotContainer.setVisionResetter(m_vision::resetSimPose);
     }
 
     @Override

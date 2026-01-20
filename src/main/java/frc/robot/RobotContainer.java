@@ -6,12 +6,16 @@ package frc.robot;
 
 import static edu.wpi.first.units.Units.*;
 
+import java.util.function.Consumer;
+
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.commands.FollowPathCommand;
+import com.pathplanner.lib.commands.PathPlannerAuto;
 
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -42,18 +46,23 @@ public class RobotContainer {
 
     public PhotonVisionSim visionSim = null;
 
+    private Consumer<Pose2d> visionResetter;
+
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
 
     /* Path follower */
     private final SendableChooser<Command> autoChooser;
 
+    /** Stores the starting pose of the currently selected auto */
+    private Pose2d selectedAutoStartingPose = new Pose2d();
+
     public RobotContainer() {
         if (Robot.isSimulation()) {
-            visionSim = new PhotonVisionSim(drivetrain);
+            visionSim = new PhotonVisionSim(drivetrain, this::resetRobotPose);
         }
 
         autoChooser = AutoBuilder.buildAutoChooser("Tests");
-        SmartDashboard.putData("Auto Mode", autoChooser);
+        initAutoSelector();
 
         configureBindings();
 
@@ -114,13 +123,15 @@ public class RobotContainer {
         joystick.start().and(joystick.y()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
         joystick.start().and(joystick.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
 
-        // Reset the field-centric heading on left bumper press.
-        joystick.leftBumper().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
-
-        // In simulation, inject drift with right bumper to test vision correction
         if (Robot.isSimulation() && visionSim != null) {
+            // In simulation, inject drift with right bumper to test vision correction
             joystick.rightBumper().onTrue(drivetrain.runOnce(() ->
                 visionSim.injectDrift(0.5, 15.0)  // 0.5m translation, 15° rotation drift
+            ));
+
+            // Left bumper resets robot to the starting pose of the selected auto
+            joystick.leftBumper().onTrue(drivetrain.runOnce(() ->
+                visionSim.cycleResetPosition(selectedAutoStartingPose)
             ));
         }
 
@@ -130,5 +141,63 @@ public class RobotContainer {
     public Command getAutonomousCommand() {
         /* Run the path selected from the auto chooser */
         return autoChooser.getSelected();
+    }
+
+    /**
+     * Initializes the auto selector and publishes it to SmartDashboard.
+     */
+    private void initAutoSelector() {
+        SmartDashboard.putData("Auto Mode", autoChooser);
+
+        // Update starting pose when auto selection changes
+        autoChooser.onChange(this::onNewAutoSelected);
+
+        // Initialize starting pose from default selection
+        onNewAutoSelected(autoChooser.getSelected());
+    }
+
+    /**
+     * Called when a new auto is selected from the chooser.
+     * Updates the starting pose for simulation reset.
+     */
+    private void onNewAutoSelected(Command command) {
+        if (command instanceof PathPlannerAuto auto) {
+            Pose2d pose = auto.getStartingPose();
+            selectedAutoStartingPose = pose != null ? pose : new Pose2d();
+        } else {
+            // "None" selection is an InstantCommand - reset to origin
+            selectedAutoStartingPose = new Pose2d();
+        }
+    }
+
+    /**
+     * Sets the vision resetter consumer to be called when the robot pose is reset.
+     * @param resetter Consumer that accepts a Pose2d to reset vision position
+     */
+    public void setVisionResetter(Consumer<Pose2d> resetter) {
+        this.visionResetter = resetter;
+    }
+
+    /**
+     * Called when the robot pose is reset in simulation.
+     * This is triggered by PhotonVisionSim via the consumer pattern.
+     *
+     * Resets both the ground truth pose and the drivetrain pose to the specified pose.
+     * Also resets the vision system simulation pose history if a Vision instance is set.
+     *
+     * @param pose The new pose the robot has been reset to
+     */
+    private void resetRobotPose(Pose2d pose) {
+        System.out.println("Robot pose reset to: " + pose);
+
+        if (Robot.isSimulation() && visionSim != null) {
+            visionSim.resetGroundTruthPoseForSim(pose);
+        }
+
+        drivetrain.resetPose(pose);
+
+        if (visionResetter != null) {
+            visionResetter.accept(pose);
+        }
     }
 }

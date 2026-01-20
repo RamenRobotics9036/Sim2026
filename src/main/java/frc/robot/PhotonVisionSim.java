@@ -1,13 +1,18 @@
 package frc.robot;
 
+import java.util.function.Consumer;
+
 import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.swerve.SwerveDrivetrain;
+import com.pathplanner.lib.util.FlippingUtil;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 
@@ -20,6 +25,9 @@ public class PhotonVisionSim {
 
     private final SwerveDrivetrain<TalonFX, TalonFX, CANcoder> drivetrain;
 
+    /** Consumer to notify RobotContainer when pose is reset */
+    private final Consumer<Pose2d> poseResetConsumer;
+
     /** The ground truth pose tracks where the robot actually is in simulation physics. */
     private Pose2d groundTruthPose = new Pose2d();
 
@@ -30,18 +38,27 @@ public class PhotonVisionSim {
     /** Last update time for delta calculation */
     private double lastUpdateTime;
 
+    /** Timeout in seconds before cycle resets to beginning */
+    private static final double CYCLE_TIMEOUT_SECONDS = 2.0;
+    private double lastCycleTime = 0.0;
+
+    /** Current position in the reset cycle (0-N) */
+    private int currrentCycleState = 0;
+
     /**
      * Constructs a PhotonVisionSim instance.
      * This class is only intended for use in simulation.
      *
      * @param drivetrain The swerve drivetrain to track and manipulate
+     * @param poseResetConsumer Consumer to be called when pose is reset (e.g., RobotContainer::resetRobotPose)
      * @throws IllegalStateException if called outside of simulation mode
      */
-    public PhotonVisionSim(SwerveDrivetrain<TalonFX, TalonFX, CANcoder> drivetrain) {
+    public PhotonVisionSim(SwerveDrivetrain<TalonFX, TalonFX, CANcoder> drivetrain, Consumer<Pose2d> poseResetConsumer) {
         if (!Robot.isSimulation()) {
             throw new IllegalStateException("PhotonVisionSim should only be instantiated in simulation mode");
         }
         this.drivetrain = drivetrain;
+        this.poseResetConsumer = poseResetConsumer;
         this.lastUpdateTime = Utils.getCurrentTimeSeconds();
     }
 
@@ -92,14 +109,78 @@ public class PhotonVisionSim {
     }
 
     /**
-     * Resets the ground truth simulated pose to match the current estimated pose.
-     * Call this when you reset the robot pose.
+     * Resets both the ground truth pose.
+     *
+     * @param pose The pose to reset both ground truth and drivetrain to
      */
-    public void resetGroundTruthPose() {
-        groundTruthPose = drivetrain.getState().Pose;
+    public void resetGroundTruthPoseForSim(Pose2d pose) {
+        groundTruthPose = pose;
         totalDistanceTraveled = 0.0;
         totalRotation = 0.0;
     }
+
+    /**
+     * Resets both poses to a PathPlanner auto starting pose, optionally flipping based on alliance.
+     * PathPlanner paths are designed for blue alliance origin.
+     *
+     * @param blueAlliancePose The pose as defined in PathPlanner (blue alliance origin)
+     * @param useCorrectTeamSide If true, places robot on correct alliance side (flips for red).
+     *                           If false, places robot on the wrong side of the field.
+     */
+    public void resetAllPosesToSelectedAutoPos(Pose2d blueAlliancePose, boolean useCorrectTeamSide) {
+        boolean shouldFlipPose = isRedAlliance();
+        if (!useCorrectTeamSide) {
+            shouldFlipPose = !shouldFlipPose;
+        }
+
+        Pose2d pose = shouldFlipPose
+            ? FlippingUtil.flipFieldPose(blueAlliancePose)
+            : blueAlliancePose;
+
+        // Trigger robot pose reset
+        poseResetConsumer.accept(pose);
+    }
+
+    /**
+     * Cycles through reset positions each time it's called.
+     * Cycle order:
+     *   0: Auto starting pose on correct alliance side
+     *   1: Auto starting pose on wrong alliance side
+     *   2: Origin on correct alliance side
+     *   3: Origin on wrong alliance side
+     *
+     * If CYCLE_TIMEOUT_SECONDS elapses between calls, restarts from 0.
+     *
+     * @param blueAlliancePose The auto starting pose (blue alliance origin)
+     */
+    public void cycleResetPosition(Pose2d blueAlliancePose) {
+        double currentTime = Utils.getCurrentTimeSeconds();
+
+        // Reset cycle if timeout elapsed
+        if (currentTime - lastCycleTime > CYCLE_TIMEOUT_SECONDS) {
+            currrentCycleState = 0;
+        }
+        lastCycleTime = currentTime;
+
+        // Execute based on current cycle state
+        switch (currrentCycleState) {
+            case 0 -> resetAllPosesToSelectedAutoPos(blueAlliancePose, true);
+            case 1 -> resetAllPosesToSelectedAutoPos(blueAlliancePose, false);
+            case 2 -> resetAllPosesToSelectedAutoPos(new Pose2d(), true);
+            case 3 -> resetAllPosesToSelectedAutoPos(new Pose2d(), false);
+        }
+
+        // Advance to next state
+        currrentCycleState = (currrentCycleState + 1) % 4;
+    }
+
+    /**
+     * @return true if the robot is currently configured as red alliance
+     */
+    private boolean isRedAlliance() {
+        return DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red;
+    }
+
 
     /**
      * Introduces simulated odometry drift by offsetting the pose estimator.
@@ -155,7 +236,7 @@ public class PhotonVisionSim {
     }
 
     /**
-     * Updates ground truth pose, runs vision simulation, and publishes telemetry.
+     * Updates ground truth pose, and publishes telemetry.
      * Call this from Robot.simulationPeriodic().
      */
     public void simulationPeriodicPhotonSim() {
