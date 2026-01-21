@@ -52,8 +52,8 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     private boolean m_hasAppliedOperatorPerspective = false;
 
     /* Track the last time the pose was reset to filter stale vision measurements.
-     * Initialized to a time far in the past so vision works immediately on startup. */
-    private double m_lastResetTimestamp = -100000.0;
+     * Initialized to -1 so vision works immediately on startup. */
+    private double m_lastResetTimestamp = -1.0;
 
     /** Swerve request to apply during robot-centric path following */
     private final SwerveRequest.ApplyRobotSpeeds m_pathApplyRobotSpeeds = new SwerveRequest.ApplyRobotSpeeds();
@@ -310,6 +310,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     @Override
     public void resetPose(Pose2d pose) {
         m_lastResetTimestamp = Utils.getCurrentTimeSeconds();
+        // System.out.println("***************************RESET TIME: " + m_lastResetTimestamp);
         super.resetPose(pose);
     }
 
@@ -342,17 +343,32 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
      * @param visionRobotPoseMeters The pose of the robot as measured by the vision camera.
      * @param timestampSeconds The timestamp of the vision measurement in seconds (FPGA time).
      */
-    @Override
-    public void addVisionMeasurement(Pose2d visionRobotPoseMeters, double timestampSeconds) {
-        // Filter out measurements captured near a pose reset (before or after)
+    /**
+     * Determines if a vision measurement should be ignored based on its timestamp
+     * relative to the last pose reset.
+     *
+     * @param timestampSeconds The timestamp of the vision measurement in seconds (FPGA time).
+     * @return true if the measurement should be ignored, false otherwise.
+     */
+    private boolean shouldIgnoreThisVisionMeasurement(double timestampSeconds) {
         double convertedTimestamp = Utils.fpgaToCurrentTime(timestampSeconds);
         double ignoreWindowStart = m_lastResetTimestamp - 2.0;
-        double ignoreWindowEnd = m_lastResetTimestamp + 2.0;
+        double ignoreWindowEnd = m_lastResetTimestamp + 0.5;
 
-        if (convertedTimestamp >= ignoreWindowStart && convertedTimestamp <= ignoreWindowEnd) {
+        if (m_lastResetTimestamp == -1.0) {
+            return false;
+        }
+
+        return convertedTimestamp >= ignoreWindowStart && convertedTimestamp <= ignoreWindowEnd;
+    }
+
+    @Override
+    public void addVisionMeasurement(Pose2d visionRobotPoseMeters, double timestampSeconds) {
+        if (shouldIgnoreThisVisionMeasurement(timestampSeconds)) {
+            // System.out.println("&&&& &&&& &&&& &&&& &&&&: Got a vision measurement during reset");
             return;
         }
-        super.addVisionMeasurement(visionRobotPoseMeters, convertedTimestamp);
+        super.addVisionMeasurement(visionRobotPoseMeters, Utils.fpgaToCurrentTime(timestampSeconds));
     }
 
     /**
@@ -386,15 +402,11 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         double timestampSeconds,
         Matrix<N3, N1> visionMeasurementStdDevs
     ) {
-        // Filter out measurements captured near a pose reset (before or after)
-        double convertedTimestamp = Utils.fpgaToCurrentTime(timestampSeconds);
-        double ignoreWindowStart = m_lastResetTimestamp - 2.0;
-        double ignoreWindowEnd = m_lastResetTimestamp + 2.0;
-
-        if (convertedTimestamp >= ignoreWindowStart && convertedTimestamp <= ignoreWindowEnd) {
+        if (shouldIgnoreThisVisionMeasurement(timestampSeconds)) {
+            // System.out.println("&&&& &&&& &&&& &&&& &&&&: Got a vision measurement during reset");
             return;
         }
-        super.addVisionMeasurement(visionRobotPoseMeters, convertedTimestamp, visionMeasurementStdDevs);
+        super.addVisionMeasurement(visionRobotPoseMeters, Utils.fpgaToCurrentTime(timestampSeconds), visionMeasurementStdDevs);
     }
 
     /**
