@@ -30,10 +30,8 @@ public class Robot extends TimedRobot {
         m_robotContainer = new RobotContainer();
         m_vision = new Vision(m_robotContainer.drivetrain::addVisionMeasurement);
 
-        // Connect vision to PhotonVisionSim so pose resets also reset the vision system
-        if (m_robotContainer.visionSim != null) {
-            m_robotContainer.visionSim.setVision(m_vision);
-        }
+        // Set the vision resetter so pose resets also reset vision simulation
+        m_robotContainer.setVisionResetter(m_vision::resetSimPose);
     }
 
     @Override

@@ -28,9 +28,6 @@ public class PhotonVisionSim {
     /** Consumer to notify RobotContainer when pose is reset */
     private final Consumer<Pose2d> poseResetConsumer;
 
-    /** Optional Vision instance for resetting the vision system simulation */
-    private Vision vision;
-
     /** The ground truth pose tracks where the robot actually is in simulation physics. */
     private Pose2d groundTruthPose = new Pose2d();
 
@@ -63,16 +60,6 @@ public class PhotonVisionSim {
         this.drivetrain = drivetrain;
         this.poseResetConsumer = poseResetConsumer;
         this.lastUpdateTime = Utils.getCurrentTimeSeconds();
-    }
-
-    /**
-     * Sets the Vision instance to be reset when poses are reset.
-     * This allows the VisionSystemSim pose history to be cleared along with the drivetrain pose.
-     *
-     * @param vision The Vision instance to reset on pose changes
-     */
-    public void setVision(Vision vision) {
-        this.vision = vision;
     }
 
     /**
@@ -128,9 +115,6 @@ public class PhotonVisionSim {
      */
     public void resetGroundTruthPoseForSim(Pose2d pose) {
         groundTruthPose = pose;
-        if (vision != null) {
-            vision.resetSimPose(pose);
-        }
         totalDistanceTraveled = 0.0;
         totalRotation = 0.0;
     }
@@ -252,7 +236,7 @@ public class PhotonVisionSim {
     }
 
     /**
-     * Updates ground truth pose, runs vision simulation, and publishes telemetry.
+     * Updates ground truth pose, and publishes telemetry.
      * Call this from Robot.simulationPeriodic().
      */
     public void simulationPeriodicPhotonSim() {

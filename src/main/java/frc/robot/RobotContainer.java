@@ -6,6 +6,8 @@ package frc.robot;
 
 import static edu.wpi.first.units.Units.*;
 
+import java.util.function.Consumer;
+
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
@@ -43,6 +45,8 @@ public class RobotContainer {
     private final CommandXboxController joystick = new CommandXboxController(0);
 
     public PhotonVisionSim visionSim = null;
+
+    private Consumer<Pose2d> visionResetter;
 
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
 
@@ -167,6 +171,14 @@ public class RobotContainer {
     }
 
     /**
+     * Sets the vision resetter consumer to be called when the robot pose is reset.
+     * @param resetter Consumer that accepts a Pose2d to reset vision position
+     */
+    public void setVisionResetter(Consumer<Pose2d> resetter) {
+        this.visionResetter = resetter;
+    }
+
+    /**
      * Called when the robot pose is reset in simulation.
      * This is triggered by PhotonVisionSim via the consumer pattern.
      *
@@ -183,5 +195,9 @@ public class RobotContainer {
         }
 
         drivetrain.resetPose(pose);
+
+        if (visionResetter != null) {
+            visionResetter.accept(pose);
+        }
     }
 }
