@@ -23,6 +23,9 @@ public class PhotonVisionSim {
 
     private final SwerveDrivetrain<TalonFX, TalonFX, CANcoder> drivetrain;
 
+    /** Optional Vision instance for resetting the vision system simulation */
+    private Vision vision;
+
     /** The ground truth pose tracks where the robot actually is in simulation physics. */
     private Pose2d groundTruthPose = new Pose2d();
 
@@ -53,6 +56,16 @@ public class PhotonVisionSim {
         }
         this.drivetrain = drivetrain;
         this.lastUpdateTime = Utils.getCurrentTimeSeconds();
+    }
+
+    /**
+     * Sets the Vision instance to be reset when poses are reset.
+     * This allows the VisionSystemSim pose history to be cleared along with the drivetrain pose.
+     *
+     * @param vision The Vision instance to reset on pose changes
+     */
+    public void setVision(Vision vision) {
+        this.vision = vision;
     }
 
     /**
@@ -116,12 +129,16 @@ public class PhotonVisionSim {
 
     /**
      * Resets both the ground truth pose and the drivetrain pose to the specified pose.
+     * Also resets the vision system simulation pose history if a Vision instance is set.
      *
      * @param pose The pose to reset both ground truth and drivetrain to
      */
     public void resetAllPoses(Pose2d pose) {
         groundTruthPose = pose;
         drivetrain.resetPose(pose);
+        if (vision != null) {
+            vision.resetSimPose(pose);
+        }
         totalDistanceTraveled = 0.0;
         totalRotation = 0.0;
     }
