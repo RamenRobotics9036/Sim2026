@@ -98,11 +98,15 @@ public class RobotContainer {
     private Command getJoystickCommandForSimRobot() {
         return drivetrain.applyRequest(() -> {
             ScreenDirection direction = getOperatorScreenDirection();
-            System.out.println("Operator direction: " + direction);
 
-            return drive.withVelocityX(-joystick.getLeftY() * MaxSpeed) // Drive forward with negative Y (forward)
-                .withVelocityY(-joystick.getLeftX() * MaxSpeed) // Drive left with negative X (left)
-                .withRotationalRate(-joystick.getRightX() * MaxAngularRate); // Drive counterclockwise with negative X (left)
+            return switch (direction) {
+                case EAST -> drive.withVelocityX(joystick.getLeftX() * MaxSpeed)
+                    .withVelocityY(-joystick.getLeftY() * MaxSpeed)
+                    .withRotationalRate(-joystick.getRightX() * MaxAngularRate);
+                case WEST -> drive.withVelocityX(-joystick.getLeftX() * MaxSpeed)
+                    .withVelocityY(joystick.getLeftY() * MaxSpeed)
+                    .withRotationalRate(-joystick.getRightX() * MaxAngularRate);
+            };
         });
     }
 
