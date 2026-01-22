@@ -78,6 +78,8 @@ public class RobotContainer {
         );
     }
 
+    // $TODO - This method should go away.  Instead, we use setOperatorPerspectiveForward
+    // to set the joystick correctly for sim.
     // In simulation, we want the x and y of the field to match the x and y of the joystick.
     private Command getJoystickCommandForSimRobot() {
         return drivetrain.applyRequest(() ->
