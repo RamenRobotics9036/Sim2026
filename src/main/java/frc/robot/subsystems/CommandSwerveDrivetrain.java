@@ -51,9 +51,11 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     /* Keep track if we've ever applied the operator perspective before or not */
     private boolean m_hasAppliedOperatorPerspective = false;
 
-    /* Track the last time the pose was reset to filter stale vision measurements.
-     * Initialized to -1 so vision works immediately on startup. */
-    private double m_lastResetTimestamp = -1.0;
+    /* Sentinel value indicating no pose reset has occurred yet, allowing vision to work immediately on startup */
+    private static final double kResetInitConstant = -1.0;
+
+    /* Track the last time the pose was reset to filter stale vision measurements. */
+    private double m_lastResetTimestamp = kResetInitConstant;
 
     /** Swerve request to apply during robot-centric path following */
     private final SwerveRequest.ApplyRobotSpeeds m_pathApplyRobotSpeeds = new SwerveRequest.ApplyRobotSpeeds();
@@ -355,7 +357,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         double ignoreWindowStart = m_lastResetTimestamp - 2.0;
         double ignoreWindowEnd = m_lastResetTimestamp + 0.0;
 
-        if (m_lastResetTimestamp == -1.0) {
+        if (m_lastResetTimestamp == kResetInitConstant) {
             return false;
         }
 
