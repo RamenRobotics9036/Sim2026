@@ -1,5 +1,7 @@
 package frc.robot;
 
+import java.util.function.Consumer;
+
 import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
@@ -22,6 +24,9 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 public class PhotonVisionSim {
 
     private final SwerveDrivetrain<TalonFX, TalonFX, CANcoder> drivetrain;
+
+    /** Consumer to notify RobotContainer when pose is reset */
+    private final Consumer<Pose2d> poseResetConsumer;
 
     /** Optional Vision instance for resetting the vision system simulation */
     private Vision vision;
@@ -48,13 +53,15 @@ public class PhotonVisionSim {
      * This class is only intended for use in simulation.
      *
      * @param drivetrain The swerve drivetrain to track and manipulate
+     * @param poseResetConsumer Consumer to be called when pose is reset (e.g., RobotContainer::resetRobotPose)
      * @throws IllegalStateException if called outside of simulation mode
      */
-    public PhotonVisionSim(SwerveDrivetrain<TalonFX, TalonFX, CANcoder> drivetrain) {
+    public PhotonVisionSim(SwerveDrivetrain<TalonFX, TalonFX, CANcoder> drivetrain, Consumer<Pose2d> poseResetConsumer) {
         if (!Robot.isSimulation()) {
             throw new IllegalStateException("PhotonVisionSim should only be instantiated in simulation mode");
         }
         this.drivetrain = drivetrain;
+        this.poseResetConsumer = poseResetConsumer;
         this.lastUpdateTime = Utils.getCurrentTimeSeconds();
     }
 
@@ -161,6 +168,9 @@ public class PhotonVisionSim {
             ? FlippingUtil.flipFieldPose(blueAlliancePose)
             : blueAlliancePose;
         resetAllPoses(pose);
+
+        // Trigger robot pose reset
+        poseResetConsumer.accept(pose);
     }
 
     /**

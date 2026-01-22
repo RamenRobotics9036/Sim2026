@@ -54,7 +54,7 @@ public class RobotContainer {
 
     public RobotContainer() {
         if (Robot.isSimulation()) {
-            visionSim = new PhotonVisionSim(drivetrain);
+            visionSim = new PhotonVisionSim(drivetrain, this::resetRobotPose);
         }
 
         autoChooser = AutoBuilder.buildAutoChooser("Tests");
@@ -164,5 +164,15 @@ public class RobotContainer {
             // "None" selection is an InstantCommand - reset to origin
             selectedAutoStartingPose = new Pose2d();
         }
+    }
+
+    /**
+     * Called when the robot pose is reset in simulation.
+     * This is triggered by PhotonVisionSim via the consumer pattern.
+     *
+     * @param pose The new pose the robot has been reset to
+     */
+    private void resetRobotPose(Pose2d pose) {
+        System.out.println("Robot pose reset to: " + pose);
     }
 }
