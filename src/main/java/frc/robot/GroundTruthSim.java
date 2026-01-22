@@ -21,7 +21,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
  * independently of odometry drift. This allows testing vision correction
  * by providing ground truth to the simulated cameras.
  */
-public class PhotonVisionSim {
+public class GroundTruthSim {
 
     private final SwerveDrivetrain<TalonFX, TalonFX, CANcoder> drivetrain;
 
@@ -53,7 +53,7 @@ public class PhotonVisionSim {
      * @param poseResetConsumer Consumer to be called when pose is reset (e.g., RobotContainer::resetRobotPose)
      * @throws IllegalStateException if called outside of simulation mode
      */
-    public PhotonVisionSim(SwerveDrivetrain<TalonFX, TalonFX, CANcoder> drivetrain, Consumer<Pose2d> poseResetConsumer) {
+    public GroundTruthSim(SwerveDrivetrain<TalonFX, TalonFX, CANcoder> drivetrain, Consumer<Pose2d> poseResetConsumer) {
         if (!Robot.isSimulation()) {
             throw new IllegalStateException("PhotonVisionSim should only be instantiated in simulation mode");
         }

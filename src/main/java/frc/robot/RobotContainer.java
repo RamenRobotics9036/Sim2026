@@ -44,7 +44,7 @@ public class RobotContainer {
 
     private final CommandXboxController joystick = new CommandXboxController(0);
 
-    public PhotonVisionSim visionSim = null;
+    public GroundTruthSim visionSim = null;
 
     private Consumer<Pose2d> visionResetter;
 
@@ -58,7 +58,7 @@ public class RobotContainer {
 
     public RobotContainer() {
         if (Robot.isSimulation()) {
-            visionSim = new PhotonVisionSim(drivetrain, this::resetRobotPose);
+            visionSim = new GroundTruthSim(drivetrain, this::resetRobotPose);
         }
 
         autoChooser = AutoBuilder.buildAutoChooser("Tests");
