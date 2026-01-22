@@ -78,13 +78,36 @@ public class RobotContainer {
         );
     }
 
-    // In simulation, we want the x and y of the field to match the x and y of the joystick.
+    // For simulation mode only, we use this to ensure that "forward" here is always
+    // towards the top of the screen, regardless of alliance color.
+    // On drivetrain, we can query getOperatorForwardDirection to determine
+    // which way is "forward" for the operator based on alliance color.
+    private enum ScreenDirection { EAST, WEST }
+
+    private ScreenDirection getOperatorScreenDirection() {
+        double degrees = drivetrain.getOperatorForwardDirection().getDegrees();
+        if (degrees >= -45 && degrees < 45) {
+            return ScreenDirection.EAST;  // Blue alliance: forward toward red wall
+        } else if (degrees >= 135 || degrees < -135) {
+            return ScreenDirection.WEST;  // Red alliance: forward toward blue wall
+        } else {
+            throw new IllegalStateException("Unexpected operator direction: " + degrees);
+        }
+    }
+
     private Command getJoystickCommandForSimRobot() {
-        return drivetrain.applyRequest(() ->
-            drive.withVelocityX(-joystick.getLeftX() * MaxSpeed) // Drive forward with negative X
-                .withVelocityY(joystick.getLeftY() * MaxSpeed) // Drive left with positive Y
-                .withRotationalRate(-joystick.getRightX() * MaxAngularRate) // Drive counterclockwise with negative X (left)
-        );
+        return drivetrain.applyRequest(() -> {
+            ScreenDirection direction = getOperatorScreenDirection();
+
+            return switch (direction) {
+                case EAST -> drive.withVelocityX(joystick.getLeftX() * MaxSpeed)
+                    .withVelocityY(-joystick.getLeftY() * MaxSpeed)
+                    .withRotationalRate(-joystick.getRightX() * MaxAngularRate);
+                case WEST -> drive.withVelocityX(-joystick.getLeftX() * MaxSpeed)
+                    .withVelocityY(joystick.getLeftY() * MaxSpeed)
+                    .withRotationalRate(-joystick.getRightX() * MaxAngularRate);
+            };
+        });
     }
 
     private void configureBindings() {
