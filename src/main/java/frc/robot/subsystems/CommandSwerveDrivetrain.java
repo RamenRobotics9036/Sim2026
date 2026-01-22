@@ -279,12 +279,6 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         if (!m_hasAppliedOperatorPerspective || DriverStation.isDisabled()) {
             DriverStation.getAlliance().ifPresent(allianceColor -> {
 
-                // $TODO - We have a bug where Joystick in sim is backwards when driving Red,
-                // but ONLY after m_hasAppliedOperatorPerspective has been set to true.
-                // So the bug only occurrs after switch to Blue and driving a bit, then
-                // switch back to Red.
-                // The CLEANEST fix may just be to call setOperatorPerspectiveForward
-                // with always-up in Sim.
                 setOperatorPerspectiveForward(
                     allianceColor == Alliance.Red
                         ? kRedAlliancePerspectiveRotation

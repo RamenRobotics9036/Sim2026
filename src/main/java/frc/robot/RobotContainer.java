@@ -78,9 +78,10 @@ public class RobotContainer {
         );
     }
 
-    // $TODO - This method should go away.  Instead, we use setOperatorPerspectiveForward
-    // to set the joystick correctly for sim.
-    // In simulation, we want the x and y of the field to match the x and y of the joystick.
+    // For simulation mode only, we use this to ensure that "forward" here is always
+    // towards the top of the screen, regardless of alliance color.
+    // On drivetrain, we can query getOperatorForwardDirection to determine
+    // which way is "forward" for the operator based on alliance color.
     private Command getJoystickCommandForSimRobot() {
         return drivetrain.applyRequest(() ->
             drive.withVelocityX(-joystick.getLeftX() * MaxSpeed) // Drive forward with negative X
