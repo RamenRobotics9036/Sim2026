@@ -17,7 +17,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 
 /**
- * Simulation helper for PhotonVision that tracks the ground truth robot pose
+ * Simulation helper that tracks the ground truth robot pose
  * independently of odometry drift. This allows testing vision correction
  * by providing ground truth to the simulated cameras.
  */
@@ -46,7 +46,7 @@ public class GroundTruthSim {
     private int currrentCycleState = 0;
 
     /**
-     * Constructs a PhotonVisionSim instance.
+     * Constructs a GroundTruthSim instance.
      * This class is only intended for use in simulation.
      *
      * @param drivetrain The swerve drivetrain to track and manipulate
@@ -55,7 +55,7 @@ public class GroundTruthSim {
      */
     public GroundTruthSim(SwerveDrivetrain<TalonFX, TalonFX, CANcoder> drivetrain, Consumer<Pose2d> poseResetConsumer) {
         if (!Robot.isSimulation()) {
-            throw new IllegalStateException("PhotonVisionSim should only be instantiated in simulation mode");
+            throw new IllegalStateException("GroundTruthSim should only be instantiated in simulation mode");
         }
         this.drivetrain = drivetrain;
         this.poseResetConsumer = poseResetConsumer;
@@ -239,7 +239,7 @@ public class GroundTruthSim {
      * Updates ground truth pose, and publishes telemetry.
      * Call this from Robot.simulationPeriodic().
      */
-    public void simulationPeriodicPhotonSim() {
+    public void simulationPeriodic() {
         // Update the ground truth pose tracking
         updateGroundTruthPose();
 

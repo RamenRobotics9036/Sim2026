@@ -44,7 +44,7 @@ public class RobotContainer {
 
     private final CommandXboxController joystick = new CommandXboxController(0);
 
-    public GroundTruthSim visionSim = null;
+    public GroundTruthSim groundTruthSim = null;
 
     private Consumer<Pose2d> visionResetter;
 
@@ -58,7 +58,7 @@ public class RobotContainer {
 
     public RobotContainer() {
         if (Robot.isSimulation()) {
-            visionSim = new GroundTruthSim(drivetrain, this::resetRobotPose);
+            groundTruthSim = new GroundTruthSim(drivetrain, this::resetRobotPose);
         }
 
         autoChooser = AutoBuilder.buildAutoChooser("Tests");
@@ -146,15 +146,15 @@ public class RobotContainer {
         joystick.start().and(joystick.y()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
         joystick.start().and(joystick.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
 
-        if (Robot.isSimulation() && visionSim != null) {
+        if (Robot.isSimulation() && groundTruthSim != null) {
             // In simulation, inject drift with right bumper to test vision correction
             joystick.rightBumper().onTrue(drivetrain.runOnce(() ->
-                visionSim.injectDrift(0.5, 15.0)  // 0.5m translation, 15° rotation drift
+                groundTruthSim.injectDrift(0.5, 15.0)  // 0.5m translation, 15° rotation drift
             ));
 
             // Left bumper resets robot to the starting pose of the selected auto
             joystick.leftBumper().onTrue(drivetrain.runOnce(() ->
-                visionSim.cycleResetPosition(selectedAutoStartingPose)
+                groundTruthSim.cycleResetPosition(selectedAutoStartingPose)
             ));
         }
 
@@ -203,7 +203,7 @@ public class RobotContainer {
 
     /**
      * Called when the robot pose is reset in simulation.
-     * This is triggered by PhotonVisionSim via the consumer pattern.
+     * This is triggered by GroundTruthSim via the consumer pattern.
      *
      * Resets both the ground truth pose and the drivetrain pose to the specified pose.
      * Also resets the vision system simulation pose history if a Vision instance is set.
@@ -213,8 +213,8 @@ public class RobotContainer {
     private void resetRobotPose(Pose2d pose) {
         System.out.println("Robot pose reset to: " + pose);
 
-        if (Robot.isSimulation() && visionSim != null) {
-            visionSim.resetGroundTruthPoseForSim(pose);
+        if (Robot.isSimulation() && groundTruthSim != null) {
+            groundTruthSim.resetGroundTruthPoseForSim(pose);
         }
 
         drivetrain.resetPose(pose);
