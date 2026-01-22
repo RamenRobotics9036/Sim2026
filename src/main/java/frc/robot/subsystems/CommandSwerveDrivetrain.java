@@ -353,7 +353,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     private boolean shouldIgnoreThisVisionMeasurement(double timestampSeconds) {
         double convertedTimestamp = Utils.fpgaToCurrentTime(timestampSeconds);
         double ignoreWindowStart = m_lastResetTimestamp - 2.0;
-        double ignoreWindowEnd = m_lastResetTimestamp + 0.5;
+        double ignoreWindowEnd = m_lastResetTimestamp + 0.0;
 
         if (m_lastResetTimestamp == -1.0) {
             return false;
