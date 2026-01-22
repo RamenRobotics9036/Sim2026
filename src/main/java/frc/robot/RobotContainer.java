@@ -82,12 +82,28 @@ public class RobotContainer {
     // towards the top of the screen, regardless of alliance color.
     // On drivetrain, we can query getOperatorForwardDirection to determine
     // which way is "forward" for the operator based on alliance color.
+    private enum ScreenDirection { EAST, WEST }
+
+    private ScreenDirection getOperatorScreenDirection() {
+        double degrees = drivetrain.getOperatorForwardDirection().getDegrees();
+        if (degrees >= -45 && degrees < 45) {
+            return ScreenDirection.EAST;  // Blue alliance: forward toward red wall
+        } else if (degrees >= 135 || degrees < -135) {
+            return ScreenDirection.WEST;  // Red alliance: forward toward blue wall
+        } else {
+            throw new IllegalStateException("Unexpected operator direction: " + degrees);
+        }
+    }
+
     private Command getJoystickCommandForSimRobot() {
-        return drivetrain.applyRequest(() ->
-            drive.withVelocityX(-joystick.getLeftX() * MaxSpeed) // Drive forward with negative X
-                .withVelocityY(joystick.getLeftY() * MaxSpeed) // Drive left with positive Y
-                .withRotationalRate(-joystick.getRightX() * MaxAngularRate) // Drive counterclockwise with negative X (left)
-        );
+        return drivetrain.applyRequest(() -> {
+            ScreenDirection direction = getOperatorScreenDirection();
+            System.out.println("Operator direction: " + direction);
+
+            return drive.withVelocityX(-joystick.getLeftY() * MaxSpeed) // Drive forward with negative Y (forward)
+                .withVelocityY(-joystick.getLeftX() * MaxSpeed) // Drive left with negative X (left)
+                .withRotationalRate(-joystick.getRightX() * MaxAngularRate); // Drive counterclockwise with negative X (left)
+        });
     }
 
     private void configureBindings() {
