@@ -1,4 +1,4 @@
-package frc.robot;
+package frc.robot.sim;
 
 import java.util.function.Consumer;
 
@@ -14,14 +14,15 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import frc.robot.Robot;
 
 
 /**
- * Simulation helper for PhotonVision that tracks the ground truth robot pose
+ * Simulation helper that tracks the ground truth robot pose
  * independently of odometry drift. This allows testing vision correction
  * by providing ground truth to the simulated cameras.
  */
-public class PhotonVisionSim {
+public class GroundTruthSim implements GroundTruthSimInterface {
 
     private final SwerveDrivetrain<TalonFX, TalonFX, CANcoder> drivetrain;
 
@@ -46,16 +47,16 @@ public class PhotonVisionSim {
     private int currrentCycleState = 0;
 
     /**
-     * Constructs a PhotonVisionSim instance.
+     * Constructs a GroundTruthSim instance.
      * This class is only intended for use in simulation.
      *
      * @param drivetrain The swerve drivetrain to track and manipulate
      * @param poseResetConsumer Consumer to be called when pose is reset (e.g., RobotContainer::resetRobotPose)
      * @throws IllegalStateException if called outside of simulation mode
      */
-    public PhotonVisionSim(SwerveDrivetrain<TalonFX, TalonFX, CANcoder> drivetrain, Consumer<Pose2d> poseResetConsumer) {
+    public GroundTruthSim(SwerveDrivetrain<TalonFX, TalonFX, CANcoder> drivetrain, Consumer<Pose2d> poseResetConsumer) {
         if (!Robot.isSimulation()) {
-            throw new IllegalStateException("PhotonVisionSim should only be instantiated in simulation mode");
+            throw new IllegalStateException("GroundTruthSim should only be instantiated in simulation mode");
         }
         this.drivetrain = drivetrain;
         this.poseResetConsumer = poseResetConsumer;
@@ -104,6 +105,7 @@ public class PhotonVisionSim {
      *
      * @return The ground truth pose of the robot in simulation
      */
+    @Override
     public Pose2d getGroundTruthPose() {
         return groundTruthPose;
     }
@@ -113,6 +115,7 @@ public class PhotonVisionSim {
      *
      * @param pose The pose to reset both ground truth and drivetrain to
      */
+    @Override
     public void resetGroundTruthPoseForSim(Pose2d pose) {
         groundTruthPose = pose;
         totalDistanceTraveled = 0.0;
@@ -153,6 +156,7 @@ public class PhotonVisionSim {
      *
      * @param blueAlliancePose The auto starting pose (blue alliance origin)
      */
+    @Override
     public void cycleResetPosition(Pose2d blueAlliancePose) {
         double currentTime = Utils.getCurrentTimeSeconds();
 
@@ -190,6 +194,7 @@ public class PhotonVisionSim {
      * @param translationOffsetMeters How far to offset the estimated position (meters)
      * @param rotationOffsetDegrees How far to offset the estimated heading (degrees)
      */
+    @Override
     public void injectDrift(double translationOffsetMeters, double rotationOffsetDegrees) {
         // Get current estimated pose
         Pose2d currentPose = drivetrain.getState().Pose;
@@ -239,7 +244,8 @@ public class PhotonVisionSim {
      * Updates ground truth pose, and publishes telemetry.
      * Call this from Robot.simulationPeriodic().
      */
-    public void simulationPeriodicPhotonSim() {
+    @Override
+    public void simulationPeriodic() {
         // Update the ground truth pose tracking
         updateGroundTruthPose();
 
