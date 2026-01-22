@@ -122,27 +122,12 @@ public class PhotonVisionSim {
     }
 
     /**
-     * Resets the ground truth simulated pose to match the current estimated pose.
-     * Call this when you reset the robot pose.
-     */
-    // I commented this out because I dont like the idea of just resetting to the simulation pose; you cant
-    // do that in real life, so I dont let it happen in this sim either.  Instead, we allow resetting
-    // the robot position to a well known position, just like resetting the robot in real life.
-    //public void resetGroundTruthPose() {
-    //    groundTruthPose = drivetrain.getState().Pose;
-    //    totalDistanceTraveled = 0.0;
-    //    totalRotation = 0.0;
-    //}
-
-    /**
-     * Resets both the ground truth pose and the drivetrain pose to the specified pose.
-     * Also resets the vision system simulation pose history if a Vision instance is set.
+     * Resets both the ground truth pose.
      *
      * @param pose The pose to reset both ground truth and drivetrain to
      */
-    public void resetAllPoses(Pose2d pose) {
+    public void resetGroundTruthPoseForSim(Pose2d pose) {
         groundTruthPose = pose;
-        drivetrain.resetPose(pose);
         if (vision != null) {
             vision.resetSimPose(pose);
         }
@@ -167,7 +152,6 @@ public class PhotonVisionSim {
         Pose2d pose = shouldFlipPose
             ? FlippingUtil.flipFieldPose(blueAlliancePose)
             : blueAlliancePose;
-        resetAllPoses(pose);
 
         // Trigger robot pose reset
         poseResetConsumer.accept(pose);

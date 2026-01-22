@@ -170,9 +170,18 @@ public class RobotContainer {
      * Called when the robot pose is reset in simulation.
      * This is triggered by PhotonVisionSim via the consumer pattern.
      *
+     * Resets both the ground truth pose and the drivetrain pose to the specified pose.
+     * Also resets the vision system simulation pose history if a Vision instance is set.
+     *
      * @param pose The new pose the robot has been reset to
      */
     private void resetRobotPose(Pose2d pose) {
         System.out.println("Robot pose reset to: " + pose);
+
+        if (Robot.isSimulation() && visionSim != null) {
+            visionSim.resetGroundTruthPoseForSim(pose);
+        }
+
+        drivetrain.resetPose(pose);
     }
 }
