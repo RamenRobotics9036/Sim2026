@@ -24,8 +24,6 @@
 
 package frc.robot.sim;
 
-import static frc.robot.Constants.Vision.*;
-
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -34,6 +32,8 @@ import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import frc.robot.Robot;
+
+import static frc.robot.sim.VisionSimConstants.Vision.*;
 
 import java.util.List;
 import java.util.Optional;

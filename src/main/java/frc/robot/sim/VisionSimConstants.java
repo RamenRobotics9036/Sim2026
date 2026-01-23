@@ -1,4 +1,4 @@
-package frc.robot;
+package frc.robot.sim;
 
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
@@ -10,7 +10,7 @@ import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 
-public class Constants {
+public class VisionSimConstants {
     public static class Vision {
         // Camera name (must match PhotonVision camera name)
         public static final String kCameraName = "photonvision";
