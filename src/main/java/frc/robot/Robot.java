@@ -30,7 +30,7 @@ public class Robot extends TimedRobot {
     public Robot() {
         m_robotContainer = new RobotContainer();
         m_visionSim = new VisionSim();
-        m_visionSim.subscribeToPoseEstimates(m_robotContainer.drivetrain::addVisionMeasurement);
+        m_visionSim.subscribePoseEstimates(m_robotContainer.drivetrain::addVisionMeasurement);
 
         // Set the vision resetter so pose resets also reset vision simulation
         m_robotContainer.setVisionResetter(m_visionSim::resetSimPose);

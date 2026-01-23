@@ -90,7 +90,7 @@ public class VisionSim {
      * @param consumer Lambda that will accept a pose estimate and pass it to your desired
      *     {@link edu.wpi.first.math.estimator.SwerveDrivePoseEstimator}
      */
-    public void subscribeToPoseEstimates(EstimateConsumer consumer) {
+    public void subscribePoseEstimates(EstimateConsumer consumer) {
         this.estConsumer = consumer;
     }
 
