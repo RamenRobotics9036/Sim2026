@@ -45,11 +45,11 @@ import org.photonvision.simulation.SimCameraProperties;
 import org.photonvision.simulation.VisionSystemSim;
 import org.photonvision.targeting.PhotonTrackedTarget;
 
-public class VisionSim {
+public class VisionSim implements VisionSimInterface {
     private final PhotonCamera camera;
     private final PhotonPoseEstimator photonEstimator;
     private Matrix<N3, N1> curStdDevs;
-    private EstimateConsumer estConsumer;
+    private VisionSimInterface.EstimateConsumer estConsumer;
 
     // Simulation
     private PhotonCameraSim cameraSim;
@@ -90,10 +90,12 @@ public class VisionSim {
      * @param consumer Lambda that will accept a pose estimate and pass it to your desired
      *     {@link edu.wpi.first.math.estimator.SwerveDrivePoseEstimator}
      */
-    public void subscribePoseEstimates(EstimateConsumer consumer) {
+    @Override
+    public void subscribePoseEstimates(VisionSimInterface.EstimateConsumer consumer) {
         this.estConsumer = consumer;
     }
 
+    @Override
     public void periodic() {
         Optional<EstimatedRobotPose> visionEst = Optional.empty();
         for (var result : camera.getAllUnreadResults()) {
@@ -187,23 +189,21 @@ public class VisionSim {
 
     // ----- Simulation
 
+    @Override
     public void simulationPeriodic(Pose2d robotSimPose) {
         visionSystemSim.update(robotSimPose);
     }
 
     /** Reset pose history of the robot in the vision system simulation. */
+    @Override
     public void resetSimPose(Pose2d pose) {
         if (Robot.isSimulation()) visionSystemSim.resetRobotPose(pose);
     }
 
     /** A Field2d for visualizing our robot and objects on the field. */
+    @Override
     public Field2d getSimDebugField() {
         if (!Robot.isSimulation()) return null;
         return visionSystemSim.getDebugField();
-    }
-
-    @FunctionalInterface
-    public static interface EstimateConsumer {
-        public void accept(Pose2d pose, double timestamp, Matrix<N3, N1> estimationStdDevs);
     }
 }
