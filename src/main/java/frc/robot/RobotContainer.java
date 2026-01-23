@@ -27,6 +27,7 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.generated.TunerConstants;
 import frc.robot.sim.GroundTruthSimFactory;
 import frc.robot.sim.GroundTruthSimInterface;
+import frc.robot.sim.SimJoystickOrientation;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 
 public class RobotContainer {
@@ -80,39 +81,14 @@ public class RobotContainer {
         );
     }
 
-    // $TODO - Move into helper class
-    // For simulation mode only, we use this to ensure that "forward" here is always
-    // towards the top of the screen, regardless of alliance color.
-    // On drivetrain, we can query getOperatorForwardDirection to determine
-    // which way is "forward" for the operator based on alliance color.
-    private enum ScreenDirection { EAST, WEST }
-
-    private ScreenDirection getOperatorScreenDirection(double degrees) {
-        if (degrees >= -45 && degrees < 45) {
-            return ScreenDirection.EAST;  // Blue alliance: forward toward red wall
-        } else if (degrees >= 135 || degrees < -135) {
-            return ScreenDirection.WEST;  // Red alliance: forward toward blue wall
-        } else {
-            throw new IllegalStateException("Unexpected operator direction: " + degrees);
-        }
-    }
-
-    private SwerveRequest.FieldCentric applySimJoystickInput(SwerveRequest.FieldCentric drive, double degrees) {
-        ScreenDirection direction = getOperatorScreenDirection(degrees);
-
-        return switch (direction) {
-            case EAST -> drive.withVelocityX(joystick.getLeftX() * MaxSpeed)
-                .withVelocityY(-joystick.getLeftY() * MaxSpeed)
-                .withRotationalRate(-joystick.getRightX() * MaxAngularRate);
-            case WEST -> drive.withVelocityX(-joystick.getLeftX() * MaxSpeed)
-                .withVelocityY(joystick.getLeftY() * MaxSpeed)
-                .withRotationalRate(-joystick.getRightX() * MaxAngularRate);
-        };
-    }
-
     private Command getJoystickCommandForSimRobot() {
         return drivetrain.applyRequest(() ->
-            applySimJoystickInput(drive, drivetrain.getOperatorForwardDirection().getDegrees()));
+            SimJoystickOrientation.applySimJoystickInput(
+                drive,
+                drivetrain.getOperatorForwardDirection().getDegrees(),
+                joystick,
+                MaxSpeed,
+                MaxAngularRate));
     }
 
     private void configureBindings() {
