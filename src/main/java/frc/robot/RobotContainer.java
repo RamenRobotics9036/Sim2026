@@ -80,6 +80,7 @@ public class RobotContainer {
         );
     }
 
+    // $TODO - Move into helper class
     // For simulation mode only, we use this to ensure that "forward" here is always
     // towards the top of the screen, regardless of alliance color.
     // On drivetrain, we can query getOperatorForwardDirection to determine

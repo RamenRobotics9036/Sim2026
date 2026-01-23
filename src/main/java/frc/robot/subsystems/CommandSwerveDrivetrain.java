@@ -51,6 +51,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     /* Keep track if we've ever applied the operator perspective before or not */
     private boolean m_hasAppliedOperatorPerspective = false;
 
+    // $TODO - Move reset and position injection logic into helper class
     /* Sentinel value indicating no pose reset has occurred yet, allowing vision to work immediately on startup */
     private static final double kResetInitConstant = -1.0;
 
