@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-package frc.robot;
+package frc.robot.sim;
 
 import static frc.robot.Constants.Vision.*;
 
@@ -33,6 +33,8 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
+import frc.robot.Robot;
+
 import java.util.List;
 import java.util.Optional;
 import org.photonvision.EstimatedRobotPose;
@@ -43,7 +45,7 @@ import org.photonvision.simulation.SimCameraProperties;
 import org.photonvision.simulation.VisionSystemSim;
 import org.photonvision.targeting.PhotonTrackedTarget;
 
-public class Vision {
+public class VisionSim {
     private final PhotonCamera camera;
     private final PhotonPoseEstimator photonEstimator;
     private Matrix<N3, N1> curStdDevs;
@@ -57,7 +59,7 @@ public class Vision {
      * @param estConsumer Lambda that will accept a pose estimate and pass it to your desired
      *     {@link edu.wpi.first.math.estimator.SwerveDrivePoseEstimator}
      */
-    public Vision(EstimateConsumer estConsumer) {
+    public VisionSim(EstimateConsumer estConsumer) {
         this.estConsumer = estConsumer;
         camera = new PhotonCamera(kCameraName);
         photonEstimator = new PhotonPoseEstimator(kTagLayout, kRobotToCam);
@@ -173,7 +175,7 @@ public class Vision {
      * edu.wpi.first.math.estimator.SwerveDrivePoseEstimator SwerveDrivePoseEstimator}. This should
      * only be used when there are targets visible.
      */
-    public Matrix<N3, N1> getEstimationStdDevs() {
+    private Matrix<N3, N1> getEstimationStdDevs() {
         return curStdDevs;
     }
 

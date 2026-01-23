@@ -13,6 +13,7 @@ import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.generated.TunerConstants;
+import frc.robot.sim.VisionSim;
 
 public class Robot extends TimedRobot {
     private Command m_autonomousCommand;
@@ -24,11 +25,11 @@ public class Robot extends TimedRobot {
         .withTimestampReplay()
         .withJoystickReplay();
 
-    private final Vision m_vision;
+    private final VisionSim m_vision;
 
     public Robot() {
         m_robotContainer = new RobotContainer();
-        m_vision = new Vision(m_robotContainer.drivetrain::addVisionMeasurement);
+        m_vision = new VisionSim(m_robotContainer.drivetrain::addVisionMeasurement);
 
         // Set the vision resetter so pose resets also reset vision simulation
         m_robotContainer.setVisionResetter(m_vision::resetSimPose);
