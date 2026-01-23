@@ -13,6 +13,8 @@ import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.generated.TunerConstants;
+import frc.robot.sim.VisionSimFactory;
+import frc.robot.sim.VisionSimInterface;
 
 public class Robot extends TimedRobot {
     private Command m_autonomousCommand;
@@ -24,14 +26,16 @@ public class Robot extends TimedRobot {
         .withTimestampReplay()
         .withJoystickReplay();
 
-    private final Vision m_vision;
+    private final VisionSimInterface m_visionSim;
 
     public Robot() {
         m_robotContainer = new RobotContainer();
-        m_vision = new Vision(m_robotContainer.drivetrain::addVisionMeasurement);
+
+        m_visionSim = VisionSimFactory.create();
+        m_visionSim.subscribePoseEstimates(m_robotContainer.drivetrain::addVisionMeasurement);
 
         // Set the vision resetter so pose resets also reset vision simulation
-        m_robotContainer.setVisionResetter(m_vision::resetSimPose);
+        m_robotContainer.setVisionResetter(m_visionSim::resetSimPose);
     }
 
     @Override
@@ -39,8 +43,10 @@ public class Robot extends TimedRobot {
         m_timeAndJoystickReplay.update();
         CommandScheduler.getInstance().run();
 
-        // Update vision (processes camera results and updates pose estimator)
-        m_vision.periodic();
+        // Update vision simulation (processes camera results and updates pose estimator)
+        if (m_visionSim != null) {
+            m_visionSim.periodic();
+        }
     }
 
     @Override
@@ -105,9 +111,11 @@ public class Robot extends TimedRobot {
             robotPoseHoldingCamera = m_robotContainer.groundTruthSim.getGroundTruthPose();
         }
 
-        m_vision.simulationPeriodic(robotPoseHoldingCamera);
+        if (m_visionSim != null) {
+            m_visionSim.simulationPeriodic(robotPoseHoldingCamera);
+        }
 
-        var debugField = m_vision.getSimDebugField();
+        var debugField = m_visionSim != null ? m_visionSim.getSimDebugField() : null;
         if (debugField != null) {
             // Show the estimated pose (what odometry thinks)
             debugField.getObject("EstimatedRobot").setPose(driveState.Pose);
