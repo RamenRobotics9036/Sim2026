@@ -31,6 +31,7 @@ import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 
 import frc.robot.generated.TunerConstants.TunerSwerveDrivetrain;
+import frc.robot.sim.VisionInjectFilter;
 
 /**
  * Class that extends the Phoenix 6 SwerveDrivetrain class and implements
@@ -51,12 +52,8 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     /* Keep track if we've ever applied the operator perspective before or not */
     private boolean m_hasAppliedOperatorPerspective = false;
 
-    // $TODO - Move reset and position injection logic into helper class
-    /* Sentinel value indicating no pose reset has occurred yet, allowing vision to work immediately on startup */
-    private static final double kResetInitConstant = -1.0;
-
-    /* Track the last time the pose was reset to filter stale vision measurements. */
-    private double m_lastResetTimestamp = kResetInitConstant;
+    /** Filter for ignoring stale vision measurements around pose resets */
+    private final VisionInjectFilter m_visionFilter = new VisionInjectFilter();
 
     /** Swerve request to apply during robot-centric path following */
     private final SwerveRequest.ApplyRobotSpeeds m_pathApplyRobotSpeeds = new SwerveRequest.ApplyRobotSpeeds();
@@ -313,8 +310,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
      */
     @Override
     public void resetPose(Pose2d pose) {
-        m_lastResetTimestamp = Utils.getCurrentTimeSeconds();
-        // System.out.println("***************************RESET TIME: " + m_lastResetTimestamp);
+        m_visionFilter.recordPoseReset(Utils.getCurrentTimeSeconds());
         super.resetPose(pose);
     }
 
@@ -347,29 +343,9 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
      * @param visionRobotPoseMeters The pose of the robot as measured by the vision camera.
      * @param timestampSeconds The timestamp of the vision measurement in seconds (FPGA time).
      */
-    /**
-     * Determines if a vision measurement should be ignored based on its timestamp
-     * relative to the last pose reset.
-     *
-     * @param timestampSeconds The timestamp of the vision measurement in seconds (FPGA time).
-     * @return true if the measurement should be ignored, false otherwise.
-     */
-    private boolean shouldIgnoreThisVisionMeasurement(double timestampSeconds) {
-        double convertedTimestamp = Utils.fpgaToCurrentTime(timestampSeconds);
-        double ignoreWindowStart = m_lastResetTimestamp - 2.0;
-        double ignoreWindowEnd = m_lastResetTimestamp + 0.0;
-
-        if (m_lastResetTimestamp == kResetInitConstant) {
-            return false;
-        }
-
-        return convertedTimestamp >= ignoreWindowStart && convertedTimestamp <= ignoreWindowEnd;
-    }
-
     @Override
     public void addVisionMeasurement(Pose2d visionRobotPoseMeters, double timestampSeconds) {
-        if (shouldIgnoreThisVisionMeasurement(timestampSeconds)) {
-            // System.out.println("&&&& &&&& &&&& &&&& &&&&: Got a vision measurement during reset");
+        if (m_visionFilter.shouldIgnore(timestampSeconds)) {
             return;
         }
         super.addVisionMeasurement(visionRobotPoseMeters, Utils.fpgaToCurrentTime(timestampSeconds));
@@ -406,8 +382,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         double timestampSeconds,
         Matrix<N3, N1> visionMeasurementStdDevs
     ) {
-        if (shouldIgnoreThisVisionMeasurement(timestampSeconds)) {
-            // System.out.println("&&&& &&&& &&&& &&&& &&&&: Got a vision measurement during reset");
+        if (m_visionFilter.shouldIgnore(timestampSeconds)) {
             return;
         }
         super.addVisionMeasurement(visionRobotPoseMeters, Utils.fpgaToCurrentTime(timestampSeconds), visionMeasurementStdDevs);
