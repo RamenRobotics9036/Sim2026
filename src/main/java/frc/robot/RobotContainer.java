@@ -87,8 +87,7 @@ public class RobotContainer {
     // which way is "forward" for the operator based on alliance color.
     private enum ScreenDirection { EAST, WEST }
 
-    private ScreenDirection getOperatorScreenDirection() {
-        double degrees = drivetrain.getOperatorForwardDirection().getDegrees();
+    private ScreenDirection getOperatorScreenDirection(double degrees) {
         if (degrees >= -45 && degrees < 45) {
             return ScreenDirection.EAST;  // Blue alliance: forward toward red wall
         } else if (degrees >= 135 || degrees < -135) {
@@ -98,19 +97,22 @@ public class RobotContainer {
         }
     }
 
-    private Command getJoystickCommandForSimRobot() {
-        return drivetrain.applyRequest(() -> {
-            ScreenDirection direction = getOperatorScreenDirection();
+    private SwerveRequest.FieldCentric applySimJoystickInput(SwerveRequest.FieldCentric drive, double degrees) {
+        ScreenDirection direction = getOperatorScreenDirection(degrees);
 
-            return switch (direction) {
-                case EAST -> drive.withVelocityX(joystick.getLeftX() * MaxSpeed)
-                    .withVelocityY(-joystick.getLeftY() * MaxSpeed)
-                    .withRotationalRate(-joystick.getRightX() * MaxAngularRate);
-                case WEST -> drive.withVelocityX(-joystick.getLeftX() * MaxSpeed)
-                    .withVelocityY(joystick.getLeftY() * MaxSpeed)
-                    .withRotationalRate(-joystick.getRightX() * MaxAngularRate);
-            };
-        });
+        return switch (direction) {
+            case EAST -> drive.withVelocityX(joystick.getLeftX() * MaxSpeed)
+                .withVelocityY(-joystick.getLeftY() * MaxSpeed)
+                .withRotationalRate(-joystick.getRightX() * MaxAngularRate);
+            case WEST -> drive.withVelocityX(-joystick.getLeftX() * MaxSpeed)
+                .withVelocityY(joystick.getLeftY() * MaxSpeed)
+                .withRotationalRate(-joystick.getRightX() * MaxAngularRate);
+        };
+    }
+
+    private Command getJoystickCommandForSimRobot() {
+        return drivetrain.applyRequest(() ->
+            applySimJoystickInput(drive, drivetrain.getOperatorForwardDirection().getDegrees()));
     }
 
     private void configureBindings() {
