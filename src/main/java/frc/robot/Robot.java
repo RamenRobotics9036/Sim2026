@@ -25,14 +25,14 @@ public class Robot extends TimedRobot {
         .withTimestampReplay()
         .withJoystickReplay();
 
-    private final VisionSim m_vision;
+    private final VisionSim m_visionSim;
 
     public Robot() {
         m_robotContainer = new RobotContainer();
-        m_vision = new VisionSim(m_robotContainer.drivetrain::addVisionMeasurement);
+        m_visionSim = new VisionSim(m_robotContainer.drivetrain::addVisionMeasurement);
 
         // Set the vision resetter so pose resets also reset vision simulation
-        m_robotContainer.setVisionResetter(m_vision::resetSimPose);
+        m_robotContainer.setVisionResetter(m_visionSim::resetSimPose);
     }
 
     @Override
@@ -40,8 +40,8 @@ public class Robot extends TimedRobot {
         m_timeAndJoystickReplay.update();
         CommandScheduler.getInstance().run();
 
-        // Update vision (processes camera results and updates pose estimator)
-        m_vision.periodic();
+        // Update vision simulation (processes camera results and updates pose estimator)
+        m_visionSim.periodic();
     }
 
     @Override
@@ -106,9 +106,9 @@ public class Robot extends TimedRobot {
             robotPoseHoldingCamera = m_robotContainer.groundTruthSim.getGroundTruthPose();
         }
 
-        m_vision.simulationPeriodic(robotPoseHoldingCamera);
+        m_visionSim.simulationPeriodic(robotPoseHoldingCamera);
 
-        var debugField = m_vision.getSimDebugField();
+        var debugField = m_visionSim.getSimDebugField();
         if (debugField != null) {
             // Show the estimated pose (what odometry thinks)
             debugField.getObject("EstimatedRobot").setPose(driveState.Pose);

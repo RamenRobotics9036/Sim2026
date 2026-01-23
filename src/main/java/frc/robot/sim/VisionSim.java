@@ -53,7 +53,7 @@ public class VisionSim {
 
     // Simulation
     private PhotonCameraSim cameraSim;
-    private VisionSystemSim visionSim;
+    private VisionSystemSim visionSystemSim;
 
     /**
      * @param estConsumer Lambda that will accept a pose estimate and pass it to your desired
@@ -67,9 +67,9 @@ public class VisionSim {
         // ----- Simulation
         if (Robot.isSimulation()) {
             // Create the vision system simulation which handles cameras and targets on the field.
-            visionSim = new VisionSystemSim("main");
+            visionSystemSim = new VisionSystemSim("main");
             // Add all the AprilTags inside the tag layout as visible targets to this simulated field.
-            visionSim.addAprilTags(kTagLayout);
+            visionSystemSim.addAprilTags(kTagLayout);
             // Create simulated camera properties. These can be set to mimic your actual camera.
             var cameraProp = new SimCameraProperties();
             cameraProp.setCalibration(960, 720, Rotation2d.fromDegrees(90));
@@ -84,7 +84,7 @@ public class VisionSim {
             cameraSim.setMinTargetAreaPixels(10.0); // Minimum pixel area for detection
             cameraSim.setMaxSightRange(3.0); // Max detection distance in meters
             // Add the simulated camera to view the targets on this simulated field.
-            visionSim.addCamera(cameraSim, kRobotToCam);
+            visionSystemSim.addCamera(cameraSim, kRobotToCam);
 
             cameraSim.enableDrawWireframe(true);
         }
@@ -182,18 +182,18 @@ public class VisionSim {
     // ----- Simulation
 
     public void simulationPeriodic(Pose2d robotSimPose) {
-        visionSim.update(robotSimPose);
+        visionSystemSim.update(robotSimPose);
     }
 
     /** Reset pose history of the robot in the vision system simulation. */
     public void resetSimPose(Pose2d pose) {
-        if (Robot.isSimulation()) visionSim.resetRobotPose(pose);
+        if (Robot.isSimulation()) visionSystemSim.resetRobotPose(pose);
     }
 
     /** A Field2d for visualizing our robot and objects on the field. */
     public Field2d getSimDebugField() {
         if (!Robot.isSimulation()) return null;
-        return visionSim.getDebugField();
+        return visionSystemSim.getDebugField();
     }
 
     @FunctionalInterface
