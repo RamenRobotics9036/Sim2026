@@ -1,4 +1,4 @@
-package frc.robot;
+package frc.robot.sim;
 
 import edu.wpi.first.math.geometry.Pose2d;
 

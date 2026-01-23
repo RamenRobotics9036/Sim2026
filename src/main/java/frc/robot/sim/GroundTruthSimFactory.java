@@ -1,4 +1,4 @@
-package frc.robot;
+package frc.robot.sim;
 
 import java.util.function.Consumer;
 
@@ -7,6 +7,7 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.swerve.SwerveDrivetrain;
 
 import edu.wpi.first.math.geometry.Pose2d;
+import frc.robot.Robot;
 
 /**
  * Factory for creating GroundTruthSimInterface instances.
