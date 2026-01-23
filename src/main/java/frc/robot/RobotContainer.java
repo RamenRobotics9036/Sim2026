@@ -44,7 +44,7 @@ public class RobotContainer {
 
     private final CommandXboxController joystick = new CommandXboxController(0);
 
-    public GroundTruthSim groundTruthSim = null;
+    public GroundTruthSimInterface groundTruthSim = null;
 
     private Consumer<Pose2d> visionResetter;
 
@@ -58,7 +58,7 @@ public class RobotContainer {
 
     public RobotContainer() {
         if (Robot.isSimulation()) {
-            groundTruthSim = new GroundTruthSim(drivetrain, this::resetRobotPose);
+            groundTruthSim = GroundTruthSimFactory.create(drivetrain, this::resetRobotPose);
         }
 
         autoChooser = AutoBuilder.buildAutoChooser("Tests");

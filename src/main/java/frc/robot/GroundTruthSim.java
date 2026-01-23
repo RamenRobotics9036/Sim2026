@@ -21,7 +21,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
  * independently of odometry drift. This allows testing vision correction
  * by providing ground truth to the simulated cameras.
  */
-public class GroundTruthSim {
+public class GroundTruthSim implements GroundTruthSimInterface {
 
     private final SwerveDrivetrain<TalonFX, TalonFX, CANcoder> drivetrain;
 
@@ -104,6 +104,7 @@ public class GroundTruthSim {
      *
      * @return The ground truth pose of the robot in simulation
      */
+    @Override
     public Pose2d getGroundTruthPose() {
         return groundTruthPose;
     }
@@ -113,6 +114,7 @@ public class GroundTruthSim {
      *
      * @param pose The pose to reset both ground truth and drivetrain to
      */
+    @Override
     public void resetGroundTruthPoseForSim(Pose2d pose) {
         groundTruthPose = pose;
         totalDistanceTraveled = 0.0;
@@ -153,6 +155,7 @@ public class GroundTruthSim {
      *
      * @param blueAlliancePose The auto starting pose (blue alliance origin)
      */
+    @Override
     public void cycleResetPosition(Pose2d blueAlliancePose) {
         double currentTime = Utils.getCurrentTimeSeconds();
 
@@ -190,6 +193,7 @@ public class GroundTruthSim {
      * @param translationOffsetMeters How far to offset the estimated position (meters)
      * @param rotationOffsetDegrees How far to offset the estimated heading (degrees)
      */
+    @Override
     public void injectDrift(double translationOffsetMeters, double rotationOffsetDegrees) {
         // Get current estimated pose
         Pose2d currentPose = drivetrain.getState().Pose;
@@ -239,6 +243,7 @@ public class GroundTruthSim {
      * Updates ground truth pose, and publishes telemetry.
      * Call this from Robot.simulationPeriodic().
      */
+    @Override
     public void simulationPeriodic() {
         // Update the ground truth pose tracking
         updateGroundTruthPose();
