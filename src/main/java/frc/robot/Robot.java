@@ -13,6 +13,7 @@ import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.generated.TunerConstants;
+// $TODO - Basic vision and show debug field
 import frc.robot.sim.VisionSimFactory;
 import frc.robot.sim.VisionSimInterface;
 
@@ -31,9 +32,11 @@ public class Robot extends TimedRobot {
     public Robot() {
         m_robotContainer = new RobotContainer();
 
+        // $TODO - Basic vision and show debug field
         m_visionSim = VisionSimFactory.create();
         m_visionSim.subscribePoseEstimates(m_robotContainer.drivetrain::addVisionMeasurement);
 
+        // $TODO - Clean reset
         // Set the vision resetter so pose resets also reset vision simulation
         m_robotContainer.setVisionResetter(m_visionSim::resetSimPose);
     }
@@ -44,6 +47,7 @@ public class Robot extends TimedRobot {
         CommandScheduler.getInstance().run();
 
         // Update vision simulation (processes camera results and updates pose estimator)
+        // $TODO - Basic vision and show debug field
         if (m_visionSim != null) {
             m_visionSim.periodic();
         }
@@ -100,8 +104,10 @@ public class Robot extends TimedRobot {
     @Override
     public void simulationPeriodic() {
         var driveState = m_robotContainer.drivetrain.getState();
+        // $TODO - Basic vision and show debug field
         var robotPoseHoldingCamera = driveState.Pose;
 
+        // $TODO - Ground truth
         if (m_robotContainer.groundTruthSim != null) {
             m_robotContainer.groundTruthSim.simulationPeriodic();
 
@@ -111,10 +117,12 @@ public class Robot extends TimedRobot {
             robotPoseHoldingCamera = m_robotContainer.groundTruthSim.getGroundTruthPose();
         }
 
+        // $TODO - Basic vision and show debug field
         if (m_visionSim != null) {
             m_visionSim.simulationPeriodic(robotPoseHoldingCamera);
         }
 
+        // $TODO - Basic vision and show debug field
         var debugField = m_visionSim != null ? m_visionSim.getSimDebugField() : null;
         if (debugField != null) {
             // Show the estimated pose (what odometry thinks)
@@ -132,6 +140,7 @@ public class Robot extends TimedRobot {
     /**
      * Get the Pose2d of each swerve module based on the current robot pose and module states.
      */
+    // $TODO - Basic vision and show debug field
     private Pose2d[] getModulePoses(com.ctre.phoenix6.swerve.SwerveDrivetrain.SwerveDriveState driveState) {
         // Module locations relative to robot center (from TunerConstants)
         Translation2d[] moduleLocations = {

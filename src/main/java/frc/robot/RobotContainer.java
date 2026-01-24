@@ -25,8 +25,10 @@ import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 
 import frc.robot.generated.TunerConstants;
+// $TODO - Ground truth
 import frc.robot.sim.GroundTruthSimFactory;
 import frc.robot.sim.GroundTruthSimInterface;
+// $TODO - Joystick screen orientation
 import frc.robot.sim.SimJoystickOrientation;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 
@@ -47,6 +49,7 @@ public class RobotContainer {
 
     private final CommandXboxController joystick = new CommandXboxController(0);
 
+    // $TODO - Ground truth
     public GroundTruthSimInterface groundTruthSim = null;
 
     private Consumer<Pose2d> visionResetter;
@@ -60,6 +63,7 @@ public class RobotContainer {
     private Pose2d selectedAutoStartingPose = new Pose2d();
 
     public RobotContainer() {
+        // $TODO - Ground truth
         if (Robot.isSimulation()) {
             groundTruthSim = GroundTruthSimFactory.create(drivetrain, this::resetRobotPose);
         }
@@ -81,6 +85,7 @@ public class RobotContainer {
         );
     }
 
+    // $TODO - Joystick screen orientation
     private Command getJoystickCommandForSimRobot() {
         return drivetrain.applyRequest(() ->
             SimJoystickOrientation.applySimJoystickInput(
@@ -97,6 +102,7 @@ public class RobotContainer {
         drivetrain.setDefaultCommand(
             // Drivetrain will execute this command periodically
             Robot.isSimulation()
+                // $TODO - Joystick screen orientation
                 ? getJoystickCommandForSimRobot()
                 : getJoystickCommandForPhysicalRobot()
         );
@@ -127,6 +133,7 @@ public class RobotContainer {
         joystick.start().and(joystick.y()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
         joystick.start().and(joystick.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
 
+        // $TODO - Bumper buttons
         if (Robot.isSimulation() && groundTruthSim != null) {
             // In simulation, inject drift with right bumper to test vision correction
             joystick.rightBumper().onTrue(drivetrain.runOnce(() ->
@@ -178,6 +185,7 @@ public class RobotContainer {
      * Sets the vision resetter consumer to be called when the robot pose is reset.
      * @param resetter Consumer that accepts a Pose2d to reset vision position
      */
+    // $TODO - Clean reset
     public void setVisionResetter(Consumer<Pose2d> resetter) {
         this.visionResetter = resetter;
     }
@@ -191,6 +199,7 @@ public class RobotContainer {
      *
      * @param pose The new pose the robot has been reset to
      */
+    // $TODO - Clean reset
     private void resetRobotPose(Pose2d pose) {
         System.out.println("Robot pose reset to: " + pose);
 
