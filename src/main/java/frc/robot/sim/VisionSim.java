@@ -56,6 +56,14 @@ public class VisionSim implements VisionSimInterface {
     private VisionSystemSim visionSystemSim;
 
     public VisionSim() {
+
+        // This is good sample code for PhotonVision usage in-general, but we spin this up ONLY for
+        // simulation.  You'll need a separate implementation for real robot vision processing.
+        if (!Robot.isSimulation()) {
+            throw new IllegalStateException(
+                "VisionSim should only be instantiated in simulation");
+        }
+
         camera = new PhotonCamera(kCameraName);
         photonEstimator = new PhotonPoseEstimator(kTagLayout, kRobotToCam);
 

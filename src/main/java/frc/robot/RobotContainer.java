@@ -6,8 +6,6 @@ package frc.robot;
 
 import static edu.wpi.first.units.Units.*;
 
-import java.util.function.Consumer;
-
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
@@ -25,9 +23,8 @@ import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 
 import frc.robot.generated.TunerConstants;
-import frc.robot.sim.GroundTruthSimFactory;
-import frc.robot.sim.GroundTruthSimInterface;
-import frc.robot.sim.SimJoystickOrientation;
+import frc.robot.sim.JoystickInputsRecord;
+import frc.robot.sim.SimWrapper;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 
 public class RobotContainer {
@@ -47,10 +44,6 @@ public class RobotContainer {
 
     private final CommandXboxController joystick = new CommandXboxController(0);
 
-    public GroundTruthSimInterface groundTruthSim = null;
-
-    private Consumer<Pose2d> visionResetter;
-
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
 
     /* Path follower */
@@ -59,47 +52,58 @@ public class RobotContainer {
     /** Stores the starting pose of the currently selected auto */
     private Pose2d selectedAutoStartingPose = new Pose2d();
 
-    public RobotContainer() {
-        if (Robot.isSimulation()) {
-            groundTruthSim = GroundTruthSimFactory.create(drivetrain, this::resetRobotPose);
-        }
+    /** Simulation wrapper - null when not in simulation */
+    public final SimWrapper m_simWrapper;
 
-        autoChooser = AutoBuilder.buildAutoChooser("Tests");
+    public RobotContainer() {
+       autoChooser = AutoBuilder.buildAutoChooser("Tests");
         initAutoSelector();
 
         configureBindings();
+
+        // $TODO - Wrapper for sim features
+        if (Robot.isSimulation()) {
+            m_simWrapper = new SimWrapper(
+                drivetrain,
+                this::resetRobotPose,
+                drivetrain::addVisionMeasurement);
+        }
+        else {
+            m_simWrapper = null;
+        }
 
         // Warmup PathPlanner to avoid Java pauses
         FollowPathCommand.warmupCommand().schedule();
     }
 
-    private Command getJoystickCommandForPhysicalRobot() {
-        return drivetrain.applyRequest(() ->
-            drive.withVelocityX(-joystick.getLeftY() * MaxSpeed) // Drive forward with negative Y (forward)
-                .withVelocityY(-joystick.getLeftX() * MaxSpeed) // Drive left with negative X (left)
-                .withRotationalRate(-joystick.getRightX() * MaxAngularRate) // Drive counterclockwise with negative X (left)
-        );
-    }
+    private Command getJoystickCommandForRobot() {
+        return drivetrain.applyRequest(() -> {
+            double leftX = joystick.getLeftX();
+            double leftY = joystick.getLeftY();
+            double rightX = joystick.getRightX();
 
-    private Command getJoystickCommandForSimRobot() {
-        return drivetrain.applyRequest(() ->
-            SimJoystickOrientation.applySimJoystickInput(
-                drive,
-                drivetrain.getOperatorForwardDirection().getDegrees(),
-                joystick,
-                MaxSpeed,
-                MaxAngularRate));
+            // $TODO - Wrapper for sim features
+            if (Robot.isSimulation()) {
+                JoystickInputsRecord newJoystickInputs = SimWrapper.transformJoystickOrientation(
+                    drivetrain.getOperatorForwardDirection().getDegrees(),
+                    leftX,
+                    leftY,
+                    rightX);
+                leftX = newJoystickInputs.driveX();
+                leftY = newJoystickInputs.driveY();
+                rightX = newJoystickInputs.rotatetX();
+            }
+
+            return drive.withVelocityX(-leftY * MaxSpeed) // Drive forward with negative Y (forward)
+                .withVelocityY(-leftX * MaxSpeed) // Drive left with negative X (left)
+                .withRotationalRate(-rightX * MaxAngularRate); // Drive counterclockwise with negative X (left)
+        });
     }
 
     private void configureBindings() {
         // Note that X is defined as forward according to WPILib convention,
         // and Y is defined as to the left according to WPILib convention.
-        drivetrain.setDefaultCommand(
-            // Drivetrain will execute this command periodically
-            Robot.isSimulation()
-                ? getJoystickCommandForSimRobot()
-                : getJoystickCommandForPhysicalRobot()
-        );
+        drivetrain.setDefaultCommand(getJoystickCommandForRobot());
 
         // Idle while the robot is disabled. This ensures the configured
         // neutral mode is applied to the drive motors while disabled.
@@ -127,15 +131,16 @@ public class RobotContainer {
         joystick.start().and(joystick.y()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
         joystick.start().and(joystick.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
 
-        if (Robot.isSimulation() && groundTruthSim != null) {
+        // $TODO - Bumper buttons
+        if (Robot.isSimulation()) {
             // In simulation, inject drift with right bumper to test vision correction
             joystick.rightBumper().onTrue(drivetrain.runOnce(() ->
-                groundTruthSim.injectDrift(0.5, 15.0)  // 0.5m translation, 15° rotation drift
+                m_simWrapper.injectDrift(0.5, 15.0)  // 0.5m translation, 15° rotation drift
             ));
 
             // Left bumper resets robot to the starting pose of the selected auto
             joystick.leftBumper().onTrue(drivetrain.runOnce(() ->
-                groundTruthSim.cycleResetPosition(selectedAutoStartingPose)
+                m_simWrapper.cycleResetPosition(selectedAutoStartingPose)
             ));
         }
 
@@ -175,14 +180,6 @@ public class RobotContainer {
     }
 
     /**
-     * Sets the vision resetter consumer to be called when the robot pose is reset.
-     * @param resetter Consumer that accepts a Pose2d to reset vision position
-     */
-    public void setVisionResetter(Consumer<Pose2d> resetter) {
-        this.visionResetter = resetter;
-    }
-
-    /**
      * Called when the robot pose is reset in simulation.
      * This is triggered by GroundTruthSim via the consumer pattern.
      *
@@ -194,14 +191,11 @@ public class RobotContainer {
     private void resetRobotPose(Pose2d pose) {
         System.out.println("Robot pose reset to: " + pose);
 
-        if (Robot.isSimulation() && groundTruthSim != null) {
-            groundTruthSim.resetGroundTruthPoseForSim(pose);
-        }
-
         drivetrain.resetPose(pose);
 
-        if (visionResetter != null) {
-            visionResetter.accept(pose);
+        // $TODO - Clean reset
+        if (Robot.isSimulation()) {
+            m_simWrapper.resetSimPose(pose);
         }
     }
 }
