@@ -7,6 +7,7 @@ import com.ctre.phoenix6.swerve.SwerveDrivetrain;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import frc.robot.Robot;
 import frc.robot.generated.TunerConstants;
 
 /** Wrapper used by Robot class for simulation.  Prefer composition over inheritance,
@@ -29,6 +30,11 @@ public class WrapperSimRobot {
         WrapperSimRobotContainer wrapperRobotContainer,
         VisionSimInterface.EstimateConsumer visionPoseConsumer,
         SwerveDrivetrain<TalonFX, TalonFX, CANcoder> drivetrain) {
+
+        if (!Robot.isSimulation()) {
+            throw new IllegalStateException(
+                "WrapperSimRobot should only be instantiated in simulation");
+        }
 
         if (wrapperRobotContainer == null) {
             throw new IllegalArgumentException("WrapperSimRobotContainer cannot be null");

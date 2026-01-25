@@ -1,6 +1,8 @@
 package frc.robot.sim;
 
 import edu.wpi.first.math.geometry.Pose2d;
+import frc.robot.Robot;
+
 import java.util.function.Consumer;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
@@ -26,6 +28,11 @@ public class WrapperSimRobotContainer {
     public WrapperSimRobotContainer(
         SwerveDrivetrain<TalonFX, TalonFX, CANcoder> drivetrain,
         Consumer<Pose2d> poseResetConsumer) {
+
+        if (!Robot.isSimulation()) {
+            throw new IllegalStateException(
+                "WrapperSimRobotContainer should only be instantiated in simulation");
+        }
 
         if (drivetrain == null) {
             throw new IllegalArgumentException("SwerveDrivetrain cannot be null");
