@@ -23,7 +23,7 @@ import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 
 import frc.robot.generated.TunerConstants;
-import frc.robot.sim.WrapperSimRobot;
+import frc.robot.sim.JoystickInputsRecord;
 import frc.robot.sim.WrapperSimRobotContainer;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 
@@ -78,7 +78,7 @@ public class RobotContainer {
 
             // $TODO - Wrapper for sim features
             if (Robot.isSimulation()) {
-                WrapperSimRobotContainer.JoystickInputsRecord newJoystickInputs = WrapperSimRobotContainer.simTransformJoystickOrientation(
+                JoystickInputsRecord newJoystickInputs = WrapperSimRobotContainer.simTransformJoystickOrientation(
                     drivetrain.getOperatorForwardDirection().getDegrees(),
                     leftX,
                     leftY,

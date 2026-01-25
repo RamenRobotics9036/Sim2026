@@ -11,8 +11,6 @@ public class SimJoystickOrientation {
 
     private enum ScreenDirection { EAST, WEST }
 
-    public record JoystickInputsRecord(double driveX, double driveY, double rotatetX) {}
-
     /**
      * Determines the operator's screen direction based on the operator forward angle.
      *

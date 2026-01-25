@@ -1,10 +1,7 @@
 package frc.robot.sim;
 
 import edu.wpi.first.math.geometry.Pose2d;
-import frc.robot.sim.SimJoystickOrientation.JoystickInputsRecord;
-
 import java.util.function.Consumer;
-
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.swerve.SwerveDrivetrain;
