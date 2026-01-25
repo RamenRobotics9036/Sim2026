@@ -2,7 +2,9 @@ package frc.robot.sim;
 
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
+import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import frc.robot.Robot;
 
 /**
  * Helper class for handling joystick orientation in simulation.
@@ -12,6 +14,8 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 public class SimJoystickOrientation {
 
     public enum ScreenDirection { EAST, WEST }
+
+    public record JoystickInputs(double driveX, double driveY, double rotatetX) {}
 
     /**
      * Determines the operator's screen direction based on the operator forward angle.
@@ -30,33 +34,26 @@ public class SimJoystickOrientation {
         }
     }
 
-    /**
-     * Applies joystick input to a field-centric drive request, adjusting for screen orientation.
-     * This ensures "forward" on the joystick always moves the robot toward the top of the screen
-     * in simulation, regardless of alliance color.
-     *
-     * @param drive The field-centric drive request to modify
-     * @param degrees The operator forward direction in degrees
-     * @param joystick The Xbox controller providing input
-     * @param maxSpeed The maximum linear speed in meters per second
-     * @param maxAngularRate The maximum angular rate in radians per second
-     * @return The modified drive request with appropriate velocity mappings
-     */
-    public static SwerveRequest.FieldCentric applySimJoystickInput(
-            SwerveRequest.FieldCentric drive,
-            double degrees,
-            CommandXboxController joystick,
-            double maxSpeed,
-            double maxAngularRate) {
-        ScreenDirection direction = getOperatorScreenDirection(degrees);
+    public static JoystickInputs simTransformJoystickOrientation(
+        double degreesFieldForward,
+        double driveX,
+        double driveY,
+        double rotateX) {
 
-        return switch (direction) {
-            case EAST -> drive.withVelocityX(joystick.getLeftX() * maxSpeed)
-                .withVelocityY(-joystick.getLeftY() * maxSpeed)
-                .withRotationalRate(-joystick.getRightX() * maxAngularRate);
-            case WEST -> drive.withVelocityX(-joystick.getLeftX() * maxSpeed)
-                .withVelocityY(joystick.getLeftY() * maxSpeed)
-                .withRotationalRate(-joystick.getRightX() * maxAngularRate);
-        };
+        if (!Robot.isSimulation()) {
+            throw new IllegalStateException("simTransformJoystickOrientation should only be called in simulation");
+        }
+
+        ScreenDirection direction = getOperatorScreenDirection(degreesFieldForward);
+        System.out.println("direction = " + direction);
+
+        // In simulation, we always swap the X and Y axes since joystick-up means drive laterally
+        // on the field, rather than forward on the field.  Additionally, invert (multiple -1) the
+        // X axis depending on which way 'forward' is, to keep controls consistent.
+        if (direction == ScreenDirection.EAST) {
+            return new JoystickInputs(driveY, -driveX, -rotateX);
+        } else {
+            return new JoystickInputs(-driveY, driveX, -rotateX);
+        }
     }
 }

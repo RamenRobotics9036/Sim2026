@@ -71,35 +71,34 @@ public class RobotContainer {
         FollowPathCommand.warmupCommand().schedule();
     }
 
-    private Command getJoystickCommandForPhysicalRobot() {
-        return drivetrain.applyRequest(() ->
-            drive.withVelocityX(-joystick.getLeftY() * MaxSpeed) // Drive forward with negative Y (forward)
-                .withVelocityY(-joystick.getLeftX() * MaxSpeed) // Drive left with negative X (left)
-                .withRotationalRate(-joystick.getRightX() * MaxAngularRate) // Drive counterclockwise with negative X (left)
-        );
-    }
+    private Command getJoystickCommandForRobot() {
+        return drivetrain.applyRequest(() -> {
+            double leftX = joystick.getLeftX();
+            double leftY = joystick.getLeftY();
+            double rightX = joystick.getRightX();
 
-    // $TODO - Joystick screen orientation
-    private Command getJoystickCommandForSimRobot() {
-        return drivetrain.applyRequest(() ->
-            SimJoystickOrientation.applySimJoystickInput(
-                drive,
-                drivetrain.getOperatorForwardDirection().getDegrees(),
-                joystick,
-                MaxSpeed,
-                MaxAngularRate));
+            // $TODO - Wrapper for sim features
+            if (Robot.isSimulation()) {
+                SimJoystickOrientation.JoystickInputs newJoystickInputs = SimJoystickOrientation.simTransformJoystickOrientation(
+                    drivetrain.getOperatorForwardDirection().getDegrees(),
+                    leftX,
+                    leftY,
+                    rightX);
+                leftX = newJoystickInputs.driveX();
+                leftY = newJoystickInputs.driveY();
+                rightX = newJoystickInputs.rotatetX();
+            }
+
+            return drive.withVelocityX(-leftY * MaxSpeed) // Drive forward with negative Y (forward)
+                .withVelocityY(-leftX * MaxSpeed) // Drive left with negative X (left)
+                .withRotationalRate(-rightX * MaxAngularRate); // Drive counterclockwise with negative X (left)
+        });
     }
 
     private void configureBindings() {
         // Note that X is defined as forward according to WPILib convention,
         // and Y is defined as to the left according to WPILib convention.
-        drivetrain.setDefaultCommand(
-            // Drivetrain will execute this command periodically
-            Robot.isSimulation()
-                // $TODO - Joystick screen orientation
-                ? getJoystickCommandForSimRobot()
-                : getJoystickCommandForPhysicalRobot()
-        );
+        drivetrain.setDefaultCommand(getJoystickCommandForRobot());
 
         // Idle while the robot is disabled. This ensures the configured
         // neutral mode is applied to the drive motors while disabled.
