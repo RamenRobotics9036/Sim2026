@@ -52,7 +52,6 @@ public class RobotContainer {
     /** Stores the starting pose of the currently selected auto */
     private Pose2d selectedAutoStartingPose = new Pose2d();
 
-    // $TODO - Wrapper for sim features
     public final WrapperSimRobotContainer m_wrapperSimRobotContainer;
 
     public RobotContainer() {
@@ -62,9 +61,14 @@ public class RobotContainer {
         configureBindings();
 
         // $TODO - Wrapper for sim features
-        m_wrapperSimRobotContainer = new WrapperSimRobotContainer(
-            drivetrain,
-            this::resetRobotPose);
+        if (Robot.isSimulation()) {
+            m_wrapperSimRobotContainer = new WrapperSimRobotContainer(
+                drivetrain,
+                this::resetRobotPose);
+        }
+        else {
+            m_wrapperSimRobotContainer = null;
+        }
 
         // Warmup PathPlanner to avoid Java pauses
         FollowPathCommand.warmupCommand().schedule();
@@ -188,6 +192,8 @@ public class RobotContainer {
         drivetrain.resetPose(pose);
 
         // $TODO - Clean reset
-        m_wrapperSimRobotContainer.resetSimRobotPose(pose);
+        if (Robot.isSimulation()) {
+            m_wrapperSimRobotContainer.resetSimRobotPose(pose);
+        }
     }
 }
