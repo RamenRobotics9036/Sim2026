@@ -1,6 +1,8 @@
 package frc.robot.sim;
 
 import edu.wpi.first.math.geometry.Pose2d;
+import frc.robot.sim.SimJoystickOrientation.JoystickInputs;
+
 import java.util.function.Consumer;
 
 import com.ctre.phoenix6.hardware.CANcoder;
@@ -58,5 +60,19 @@ public class WrapperSimRobotContainer {
 
     public GroundTruthSimInterface getGroundTruthSim() {
         return m_groundTruthSim;
+    }
+
+    public static JoystickInputs simTransformJoystickOrientation(
+        double degreesFieldForward,
+        double driveX,
+        double driveY,
+        double rotateX) {
+
+        // Just proxy call to SimJoystickOrientation static method
+        return SimJoystickOrientation.simTransformJoystickOrientation(
+            degreesFieldForward,
+            driveX,
+            driveY,
+            rotateX);
     }
 }

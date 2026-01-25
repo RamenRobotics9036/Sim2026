@@ -24,7 +24,7 @@ public class SimJoystickOrientation {
      * @return The screen direction (EAST for blue alliance, WEST for red alliance)
      * @throws IllegalStateException if the degrees don't match expected alliance orientations
      */
-    public static ScreenDirection getOperatorScreenDirection(double degrees) {
+    private static ScreenDirection getOperatorScreenDirection(double degrees) {
         if (degrees >= -45 && degrees < 45) {
             return ScreenDirection.EAST;  // Blue alliance: forward toward red wall
         } else if (degrees >= 135 || degrees < -135) {
