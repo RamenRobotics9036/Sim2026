@@ -25,11 +25,16 @@ public class Robot extends TimedRobot {
     public Robot() {
         m_robotContainer = new RobotContainer();
 
-    // $TODO - Wrapper for sim features
-    m_wrapperSimRobot = new WrapperSimRobot(
-        m_robotContainer.m_wrapperSimRobotContainer,
-        m_robotContainer.drivetrain::addVisionMeasurement,
-        m_robotContainer.drivetrain);
+        // $TODO - Wrapper for sim features
+        if (Robot.isSimulation()) {
+            m_wrapperSimRobot = new WrapperSimRobot(
+                m_robotContainer.m_wrapperSimRobotContainer,
+                m_robotContainer.drivetrain::addVisionMeasurement,
+                m_robotContainer.drivetrain);
+        }
+        else {
+            m_wrapperSimRobot = null;
+        }
     }
 
     @Override
@@ -38,7 +43,9 @@ public class Robot extends TimedRobot {
         CommandScheduler.getInstance().run();
 
         // $TODO - Wrapper for sim features
-        m_wrapperSimRobot.robotPeriodic();
+        if (Robot.isSimulation()) {
+            m_wrapperSimRobot.robotPeriodic();
+        }
     }
 
     @Override
@@ -92,6 +99,8 @@ public class Robot extends TimedRobot {
     @Override
     public void simulationPeriodic() {
         // $TODO - Wrapper for sim features
-        m_wrapperSimRobot.simulationPeriodic();
+        if (Robot.isSimulation()) {
+            m_wrapperSimRobot.simulationPeriodic();
+        }
     }
 }
