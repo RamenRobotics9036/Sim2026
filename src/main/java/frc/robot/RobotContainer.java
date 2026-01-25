@@ -6,8 +6,6 @@ package frc.robot;
 
 import static edu.wpi.first.units.Units.*;
 
-import java.util.function.Consumer;
-
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
@@ -25,11 +23,9 @@ import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 
 import frc.robot.generated.TunerConstants;
-// $TODO - Ground truth
-import frc.robot.sim.GroundTruthSimFactory;
-import frc.robot.sim.GroundTruthSimInterface;
-// $TODO - Joystick screen orientation
+// $TODO - Joystick screen orientation should GO AWAY
 import frc.robot.sim.SimJoystickOrientation;
+import frc.robot.sim.WrapperSimRobotContainer;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 
 public class RobotContainer {
@@ -49,11 +45,6 @@ public class RobotContainer {
 
     private final CommandXboxController joystick = new CommandXboxController(0);
 
-    // $TODO - Ground truth
-    public GroundTruthSimInterface groundTruthSim = null;
-
-    private Consumer<Pose2d> visionResetter;
-
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
 
     /* Path follower */
@@ -62,16 +53,19 @@ public class RobotContainer {
     /** Stores the starting pose of the currently selected auto */
     private Pose2d selectedAutoStartingPose = new Pose2d();
 
-    public RobotContainer() {
-        // $TODO - Ground truth
-        if (Robot.isSimulation()) {
-            groundTruthSim = GroundTruthSimFactory.create(drivetrain, this::resetRobotPose);
-        }
+    // $TODO - Wrapper for sim features
+    public final WrapperSimRobotContainer m_wrapperSimRobotContainer;
 
-        autoChooser = AutoBuilder.buildAutoChooser("Tests");
+    public RobotContainer() {
+       autoChooser = AutoBuilder.buildAutoChooser("Tests");
         initAutoSelector();
 
         configureBindings();
+
+        // $TODO - Wrapper for sim features
+        m_wrapperSimRobotContainer = new WrapperSimRobotContainer(
+            drivetrain,
+            this::resetRobotPose);
 
         // Warmup PathPlanner to avoid Java pauses
         FollowPathCommand.warmupCommand().schedule();
@@ -134,15 +128,15 @@ public class RobotContainer {
         joystick.start().and(joystick.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
 
         // $TODO - Bumper buttons
-        if (Robot.isSimulation() && groundTruthSim != null) {
+        if (Robot.isSimulation()) {
             // In simulation, inject drift with right bumper to test vision correction
             joystick.rightBumper().onTrue(drivetrain.runOnce(() ->
-                groundTruthSim.injectDrift(0.5, 15.0)  // 0.5m translation, 15° rotation drift
+                m_wrapperSimRobotContainer.getGroundTruthSim().injectDrift(0.5, 15.0)  // 0.5m translation, 15° rotation drift
             ));
 
             // Left bumper resets robot to the starting pose of the selected auto
             joystick.leftBumper().onTrue(drivetrain.runOnce(() ->
-                groundTruthSim.cycleResetPosition(selectedAutoStartingPose)
+                m_wrapperSimRobotContainer.getGroundTruthSim().cycleResetPosition(selectedAutoStartingPose)
             ));
         }
 
@@ -182,15 +176,6 @@ public class RobotContainer {
     }
 
     /**
-     * Sets the vision resetter consumer to be called when the robot pose is reset.
-     * @param resetter Consumer that accepts a Pose2d to reset vision position
-     */
-    // $TODO - Clean reset
-    public void setVisionResetter(Consumer<Pose2d> resetter) {
-        this.visionResetter = resetter;
-    }
-
-    /**
      * Called when the robot pose is reset in simulation.
      * This is triggered by GroundTruthSim via the consumer pattern.
      *
@@ -199,18 +184,12 @@ public class RobotContainer {
      *
      * @param pose The new pose the robot has been reset to
      */
-    // $TODO - Clean reset
     private void resetRobotPose(Pose2d pose) {
         System.out.println("Robot pose reset to: " + pose);
 
-        if (Robot.isSimulation() && groundTruthSim != null) {
-            groundTruthSim.resetGroundTruthPoseForSim(pose);
-        }
-
         drivetrain.resetPose(pose);
 
-        if (visionResetter != null) {
-            visionResetter.accept(pose);
-        }
+        // $TODO - Clean reset
+        m_wrapperSimRobotContainer.resetSimRobotPose(pose);
     }
 }
