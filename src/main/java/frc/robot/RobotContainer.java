@@ -78,7 +78,7 @@ public class RobotContainer {
 
             // $TODO - Wrapper for sim features
             if (Robot.isSimulation()) {
-                WrapperSimRobotContainer.JoystickInputs newJoystickInputs = WrapperSimRobotContainer.simTransformJoystickOrientation(
+                WrapperSimRobotContainer.JoystickInputsRecord newJoystickInputs = WrapperSimRobotContainer.simTransformJoystickOrientation(
                     drivetrain.getOperatorForwardDirection().getDegrees(),
                     leftX,
                     leftY,

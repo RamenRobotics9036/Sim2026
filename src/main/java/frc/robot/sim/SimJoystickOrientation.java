@@ -11,7 +11,7 @@ public class SimJoystickOrientation {
 
     private enum ScreenDirection { EAST, WEST }
 
-    public record JoystickInputs(double driveX, double driveY, double rotatetX) {}
+    public record JoystickInputsRecord(double driveX, double driveY, double rotatetX) {}
 
     /**
      * Determines the operator's screen direction based on the operator forward angle.
@@ -30,7 +30,7 @@ public class SimJoystickOrientation {
         }
     }
 
-    public static JoystickInputs simTransformJoystickOrientation(
+    public static JoystickInputsRecord simTransformJoystickOrientation(
         double degreesFieldForward,
         double driveX,
         double driveY,
@@ -47,9 +47,9 @@ public class SimJoystickOrientation {
         // on the field, rather than forward on the field.  Additionally, invert (multiple -1) the
         // X axis depending on which way 'forward' is, to keep controls consistent.
         if (direction == ScreenDirection.EAST) {
-            return new JoystickInputs(driveY, -driveX, -rotateX);
+            return new JoystickInputsRecord(driveY, -driveX, -rotateX);
         } else {
-            return new JoystickInputs(-driveY, driveX, -rotateX);
+            return new JoystickInputsRecord(-driveY, driveX, -rotateX);
         }
     }
 }
