@@ -45,9 +45,9 @@ public class SimJoystickOrientation {
         // on the field, rather than forward on the field.  Additionally, invert (multiple -1) the
         // X axis depending on which way 'forward' is, to keep controls consistent.
         if (direction == ScreenDirection.EAST) {
-            return new JoystickInputsRecord(driveY, -driveX, -rotateX);
+            return new JoystickInputsRecord(driveY, -driveX, rotateX);
         } else {
-            return new JoystickInputsRecord(-driveY, driveX, -rotateX);
+            return new JoystickInputsRecord(-driveY, driveX, rotateX);
         }
     }
 }
