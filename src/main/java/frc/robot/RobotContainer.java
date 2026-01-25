@@ -23,8 +23,7 @@ import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 
 import frc.robot.generated.TunerConstants;
-// $TODO - Joystick screen orientation should GO AWAY
-import frc.robot.sim.SimJoystickOrientation;
+import frc.robot.sim.WrapperSimRobot;
 import frc.robot.sim.WrapperSimRobotContainer;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 
@@ -79,7 +78,7 @@ public class RobotContainer {
 
             // $TODO - Wrapper for sim features
             if (Robot.isSimulation()) {
-                SimJoystickOrientation.JoystickInputs newJoystickInputs = SimJoystickOrientation.simTransformJoystickOrientation(
+                WrapperSimRobotContainer.JoystickInputs newJoystickInputs = WrapperSimRobotContainer.simTransformJoystickOrientation(
                     drivetrain.getOperatorForwardDirection().getDegrees(),
                     leftX,
                     leftY,
