@@ -86,7 +86,7 @@ public class Robot extends TimedRobot {
     @Override
     public void simulationPeriodic() {
         // $TODO - Wrapper for sim features
-        if (Robot.isSimulation() && m_robotContainer.m_simWrapper != null) {
+        if (m_robotContainer.m_simWrapper != null) {
             m_robotContainer.m_simWrapper.simulationPeriodic();
         }
     }
