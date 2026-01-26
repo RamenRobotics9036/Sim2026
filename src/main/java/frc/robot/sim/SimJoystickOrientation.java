@@ -39,7 +39,7 @@ public class SimJoystickOrientation {
         }
 
         ScreenDirection direction = getOperatorScreenDirection(degreesFieldForward);
-        System.out.println("direction = " + direction);
+        // System.out.println("direction = " + direction);
 
         // In simulation, we always swap the X and Y axes since joystick-up means drive laterally
         // on the field, rather than forward on the field.  Additionally, invert (multiple -1) the

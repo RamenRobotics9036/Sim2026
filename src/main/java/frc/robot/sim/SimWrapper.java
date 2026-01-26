@@ -121,15 +121,6 @@ public class SimWrapper {
     }
 
     /**
-     * Gets the ground truth simulation interface for direct access
-     * (e.g., for injecting drift or cycling reset positions).
-     */
-    // $TODO - This should go AWAY
-    public GroundTruthSimInterface getGroundTruthSim() {
-        return m_groundTruthSim;
-    }
-
-    /**
      * Transforms joystick inputs based on the operator's forward direction.
      * Static method that can be called without a SimWrapper instance.
      */
@@ -153,5 +144,20 @@ public class SimWrapper {
             );
         }
         return modulePoses;
+    }
+
+    /**
+     * Proxy call to ground truth sim to inject odometry drift.
+     */
+    public void injectDrift(double translationOffsetMeters, double rotationOffsetDegrees) {
+        m_groundTruthSim.injectDrift(translationOffsetMeters, rotationOffsetDegrees);
+    }
+
+    /**
+     * Proxy call to ground truth sim to cycle reset position.
+     * @param blueAlliancePose
+     */
+    public void cycleResetPosition(Pose2d blueAlliancePose) {
+        m_groundTruthSim.cycleResetPosition(blueAlliancePose);
     }
 }

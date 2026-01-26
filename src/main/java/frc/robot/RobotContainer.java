@@ -135,12 +135,12 @@ public class RobotContainer {
         if (Robot.isSimulation()) {
             // In simulation, inject drift with right bumper to test vision correction
             joystick.rightBumper().onTrue(drivetrain.runOnce(() ->
-                m_simWrapper.getGroundTruthSim().injectDrift(0.5, 15.0)  // 0.5m translation, 15° rotation drift
+                m_simWrapper.injectDrift(0.5, 15.0)  // 0.5m translation, 15° rotation drift
             ));
 
             // Left bumper resets robot to the starting pose of the selected auto
             joystick.leftBumper().onTrue(drivetrain.runOnce(() ->
-                m_simWrapper.getGroundTruthSim().cycleResetPosition(selectedAutoStartingPose)
+                m_simWrapper.cycleResetPosition(selectedAutoStartingPose)
             ));
         }
 
