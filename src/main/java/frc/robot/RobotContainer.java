@@ -24,7 +24,7 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 
 import frc.robot.generated.TunerConstants;
 import frc.robot.sim.JoystickInputsRecord;
-import frc.robot.sim.WrapperSimRobotContainer;
+import frc.robot.sim.SimWrapper;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 
 public class RobotContainer {
@@ -52,7 +52,8 @@ public class RobotContainer {
     /** Stores the starting pose of the currently selected auto */
     private Pose2d selectedAutoStartingPose = new Pose2d();
 
-    public final WrapperSimRobotContainer m_wrapperSimRobotContainer;
+    /** Simulation wrapper - null when not in simulation */
+    public final SimWrapper m_simWrapper;
 
     public RobotContainer() {
        autoChooser = AutoBuilder.buildAutoChooser("Tests");
@@ -62,12 +63,13 @@ public class RobotContainer {
 
         // $TODO - Wrapper for sim features
         if (Robot.isSimulation()) {
-            m_wrapperSimRobotContainer = new WrapperSimRobotContainer(
+            m_simWrapper = new SimWrapper(
                 drivetrain,
-                this::resetRobotPose);
+                this::resetRobotPose,
+                drivetrain::addVisionMeasurement);
         }
         else {
-            m_wrapperSimRobotContainer = null;
+            m_simWrapper = null;
         }
 
         // Warmup PathPlanner to avoid Java pauses
@@ -82,7 +84,7 @@ public class RobotContainer {
 
             // $TODO - Wrapper for sim features
             if (Robot.isSimulation()) {
-                JoystickInputsRecord newJoystickInputs = WrapperSimRobotContainer.simTransformJoystickOrientation(
+                JoystickInputsRecord newJoystickInputs = SimWrapper.transformJoystickOrientation(
                     drivetrain.getOperatorForwardDirection().getDegrees(),
                     leftX,
                     leftY,
@@ -133,12 +135,12 @@ public class RobotContainer {
         if (Robot.isSimulation()) {
             // In simulation, inject drift with right bumper to test vision correction
             joystick.rightBumper().onTrue(drivetrain.runOnce(() ->
-                m_wrapperSimRobotContainer.getGroundTruthSim().injectDrift(0.5, 15.0)  // 0.5m translation, 15° rotation drift
+                m_simWrapper.getGroundTruthSim().injectDrift(0.5, 15.0)  // 0.5m translation, 15° rotation drift
             ));
 
             // Left bumper resets robot to the starting pose of the selected auto
             joystick.leftBumper().onTrue(drivetrain.runOnce(() ->
-                m_wrapperSimRobotContainer.getGroundTruthSim().cycleResetPosition(selectedAutoStartingPose)
+                m_simWrapper.getGroundTruthSim().cycleResetPosition(selectedAutoStartingPose)
             ));
         }
 
@@ -193,7 +195,7 @@ public class RobotContainer {
 
         // $TODO - Clean reset
         if (Robot.isSimulation()) {
-            m_wrapperSimRobotContainer.resetSimRobotPose(pose);
+            m_simWrapper.resetSimPose(pose);
         }
     }
 }

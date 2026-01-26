@@ -9,13 +9,11 @@ import com.ctre.phoenix6.HootAutoReplay;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
-import frc.robot.sim.WrapperSimRobot;
 
 public class Robot extends TimedRobot {
     private Command m_autonomousCommand;
 
     private final RobotContainer m_robotContainer;
-    private final WrapperSimRobot m_wrapperSimRobot;
 
     /* log and replay timestamp and joystick data */
     private final HootAutoReplay m_timeAndJoystickReplay = new HootAutoReplay()
@@ -24,17 +22,6 @@ public class Robot extends TimedRobot {
 
     public Robot() {
         m_robotContainer = new RobotContainer();
-
-        // $TODO - Wrapper for sim features
-        if (Robot.isSimulation()) {
-            m_wrapperSimRobot = new WrapperSimRobot(
-                m_robotContainer.m_wrapperSimRobotContainer,
-                m_robotContainer.drivetrain::addVisionMeasurement,
-                m_robotContainer.drivetrain);
-        }
-        else {
-            m_wrapperSimRobot = null;
-        }
     }
 
     @Override
@@ -43,8 +30,8 @@ public class Robot extends TimedRobot {
         CommandScheduler.getInstance().run();
 
         // $TODO - Wrapper for sim features
-        if (Robot.isSimulation()) {
-            m_wrapperSimRobot.robotPeriodic();
+        if (Robot.isSimulation() && m_robotContainer.m_simWrapper != null) {
+            m_robotContainer.m_simWrapper.robotPeriodic();
         }
     }
 
@@ -99,8 +86,8 @@ public class Robot extends TimedRobot {
     @Override
     public void simulationPeriodic() {
         // $TODO - Wrapper for sim features
-        if (Robot.isSimulation()) {
-            m_wrapperSimRobot.simulationPeriodic();
+        if (Robot.isSimulation() && m_robotContainer.m_simWrapper != null) {
+            m_robotContainer.m_simWrapper.simulationPeriodic();
         }
     }
 }
