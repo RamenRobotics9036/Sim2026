@@ -20,6 +20,14 @@ import frc.robot.generated.TunerConstants;
  * - WrapperSimRobotContainer
  */
 public class WrapperSimRobot {
+    /** Module locations relative to robot center (from TunerConstants). */
+    private static final Translation2d[] MODULE_LOCATIONS = {
+        new Translation2d(TunerConstants.FrontLeft.LocationX, TunerConstants.FrontLeft.LocationY),
+        new Translation2d(TunerConstants.FrontRight.LocationX, TunerConstants.FrontRight.LocationY),
+        new Translation2d(TunerConstants.BackLeft.LocationX, TunerConstants.BackLeft.LocationY),
+        new Translation2d(TunerConstants.BackRight.LocationX, TunerConstants.BackRight.LocationY)
+    };
+
     private final WrapperSimRobotContainer m_wrapperRobotContainer;
     private final VisionSimInterface.EstimateConsumer m_visionPoseConsumer;
     private final SwerveDrivetrain<TalonFX, TalonFX, CANcoder> m_drivetrain;
@@ -116,18 +124,10 @@ public class WrapperSimRobot {
    * Get the Pose2d of each swerve module based on the current robot pose and module states.
    */
   private Pose2d[] getModulePoses(SwerveDrivetrain.SwerveDriveState driveState) {
-    // Module locations relative to robot center (from TunerConstants)
-    Translation2d[] moduleLocations = {
-        new Translation2d(TunerConstants.FrontLeft.LocationX, TunerConstants.FrontLeft.LocationY),
-        new Translation2d(TunerConstants.FrontRight.LocationX, TunerConstants.FrontRight.LocationY),
-        new Translation2d(TunerConstants.BackLeft.LocationX, TunerConstants.BackLeft.LocationY),
-        new Translation2d(TunerConstants.BackRight.LocationX, TunerConstants.BackRight.LocationY)
-    };
-
     Pose2d[] modulePoses = new Pose2d[4];
     for (int i = 0; i < 4; i++) {
       modulePoses[i] = driveState.Pose.transformBy(
-          new Transform2d(moduleLocations[i], driveState.ModuleStates[i].angle)
+          new Transform2d(MODULE_LOCATIONS[i], driveState.ModuleStates[i].angle)
       );
     }
     return modulePoses;
