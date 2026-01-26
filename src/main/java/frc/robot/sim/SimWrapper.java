@@ -10,16 +10,20 @@ import edu.wpi.first.math.geometry.Translation2d;
 import frc.robot.Robot;
 import frc.robot.generated.TunerConstants;
 
-/** Wrapper used by Robot class for simulation.  Prefer composition over inheritance,
- * since nobody wants their main subsystems to inherit from simulation classes.
+import java.util.function.Consumer;
+
+/**
+ * Unified simulation wrapper combining ground truth physics, vision simulation,
+ * and joystick orientation handling.
  *
- * WrapperSimRobot owns:
- * - VisionSim object that it creates
+ * <p>This class encapsulates all simulation-specific logic, keeping Robot and
+ * RobotContainer free from simulation implementation details.
  *
- * It holds references to:
- * - WrapperSimRobotContainer
+ * Note that we encapsulated this into a composeable class rather than having
+ * the sim class subclass RobotContainer, since its cleaner this way to know
+ * that the simulation code is only running under simulation conditions.
  */
-public class WrapperSimRobot {
+public class SimWrapper {
     /** Module locations relative to robot center (from TunerConstants). */
     private static final Translation2d[] MODULE_LOCATIONS = {
         new Translation2d(TunerConstants.FrontLeft.LocationX, TunerConstants.FrontLeft.LocationY),
@@ -28,108 +32,126 @@ public class WrapperSimRobot {
         new Translation2d(TunerConstants.BackRight.LocationX, TunerConstants.BackRight.LocationY)
     };
 
-    private final WrapperSimRobotContainer m_wrapperRobotContainer;
-    private final VisionSimInterface.EstimateConsumer m_visionPoseConsumer;
     private final SwerveDrivetrain<TalonFX, TalonFX, CANcoder> m_drivetrain;
+    private final GroundTruthSimInterface m_groundTruthSim;
     private final VisionSimInterface m_visionSim;
 
-    /** Constructor. */
-    public WrapperSimRobot(
-        WrapperSimRobotContainer wrapperRobotContainer,
-        VisionSimInterface.EstimateConsumer visionPoseConsumer,
-        SwerveDrivetrain<TalonFX, TalonFX, CANcoder> drivetrain) {
+    /**
+     * Creates a new SimWrapper.
+     *
+     * @param drivetrain The swerve drivetrain
+     * @param poseResetConsumer Consumer called when ground truth resets the pose (typically drivetrain::resetPose)
+     * @param visionPoseConsumer Consumer for vision pose estimates (typically drivetrain::addVisionMeasurement)
+     */
+    public SimWrapper(
+            SwerveDrivetrain<TalonFX, TalonFX, CANcoder> drivetrain,
+            Consumer<Pose2d> poseResetConsumer,
+            VisionSimInterface.EstimateConsumer visionPoseConsumer) {
 
         if (!Robot.isSimulation()) {
-            throw new IllegalStateException(
-                "WrapperSimRobot should only be instantiated in simulation");
-        }
-
-        if (wrapperRobotContainer == null) {
-            throw new IllegalArgumentException("WrapperSimRobotContainer cannot be null");
-        }
-        if (visionPoseConsumer == null) {
-            throw new IllegalArgumentException("EstimateConsumer cannot be null");
+            throw new IllegalStateException("SimWrapper should only be instantiated in simulation");
         }
         if (drivetrain == null) {
             throw new IllegalArgumentException("SwerveDrivetrain cannot be null");
         }
+        if (poseResetConsumer == null) {
+            throw new IllegalArgumentException("Pose reset consumer cannot be null");
+        }
+        if (visionPoseConsumer == null) {
+            throw new IllegalArgumentException("Vision pose consumer cannot be null");
+        }
 
-        m_wrapperRobotContainer = wrapperRobotContainer;
-        m_visionPoseConsumer = visionPoseConsumer;
         m_drivetrain = drivetrain;
 
-        m_visionSim = createVisionSimObject(
-            m_wrapperRobotContainer,
-            m_visionPoseConsumer);
-    }
+        // Create ground truth simulation
+        m_groundTruthSim = GroundTruthSimFactory.create(drivetrain, poseResetConsumer);
 
-    private VisionSimInterface createVisionSimObject(
-        WrapperSimRobotContainer wrapperRobotContainer,
-        VisionSimInterface.EstimateConsumer visionPoseConsumer) {
-
-        VisionSimInterface visionSim;
-
-        // Vision simulation setup
-        visionSim = VisionSimFactory.create();
-        if (visionSim == null) {
+        // Create vision simulation
+        m_visionSim = VisionSimFactory.create();
+        if (m_visionSim == null) {
             throw new IllegalStateException("VisionSimInterface creation failed");
         }
-        visionSim.subscribePoseEstimates(visionPoseConsumer);
-
-        // Set the vision resetter so pose resets also reset vision simulation
-        wrapperRobotContainer.setVisionResetter(visionSim::resetSimPose);
-
-        return visionSim;
+        m_visionSim.subscribePoseEstimates(visionPoseConsumer);
     }
 
-    /** Must be called by Robot::robotPeriodic. */
+    /**
+     * Must be called by Robot::robotPeriodic.
+     * Updates vision simulation (processes camera results and updates pose estimator).
+     */
     public void robotPeriodic() {
-        // Update vision simulation (processes camera results and updates pose estimator)
         m_visionSim.periodic();
     }
 
-    /**  Must be called by Robot::simulationPeriodic. */
+    /**
+     * Must be called by Robot::simulationPeriodic.
+     * Updates physics simulation and vision based on ground truth pose.
+     */
     public void simulationPeriodic() {
         var driveState = m_drivetrain.getState();
-        var robotPoseHoldingCamera = driveState.Pose;
 
-        // Ground truth simulation
-        GroundTruthSimInterface groundTruthSim = m_wrapperRobotContainer.getGroundTruthSim();
-        groundTruthSim.simulationPeriodic();
+        // Update ground truth physics simulation
+        m_groundTruthSim.simulationPeriodic();
 
-        // Update vision simulation with the ground truth robot pose (from physics)
-        // This ensures the camera sees AprilTags based on where the robot actually is,
-        // not where odometry thinks it is. This allows testing of vision correction.
-        robotPoseHoldingCamera = groundTruthSim.getGroundTruthPose();
-
-        // Vision simulation update
-        if (m_visionSim != null) {
-            m_visionSim.simulationPeriodic(robotPoseHoldingCamera);
-        }
+        // Update vision simulation with ground truth pose (not odometry)
+        // This ensures cameras see AprilTags based on actual robot position
+        Pose2d groundTruthPose = m_groundTruthSim.getGroundTruthPose();
+        m_visionSim.simulationPeriodic(groundTruthPose);
 
         // Debug field visualization
-        var debugField = m_visionSim != null ? m_visionSim.getSimDebugField() : null;
+        var debugField = m_visionSim.getSimDebugField();
         if (debugField != null) {
             // Show the estimated pose (what odometry thinks)
             debugField.getObject("EstimatedRobot").setPose(driveState.Pose);
             debugField.getObject("EstimatedRobotModules").setPoses(getModulePoses(driveState));
 
             // Show the ground truth pose (where the robot actually is in simulation)
-            debugField.getObject("GroundTruthRobot").setPose(
-                groundTruthSim.getGroundTruthPose());
+            debugField.getObject("GroundTruthRobot").setPose(groundTruthPose);
         }
     }
 
-  /**
-   * Get the Pose2d of each swerve module based on the current robot pose and module states.
-   */
-  private Pose2d[] getModulePoses(SwerveDrivetrain.SwerveDriveState driveState) {
-    Pose2d[] modulePoses = new Pose2d[4];
-    for (int i = 0; i < 4; i++) {
-      modulePoses[i] = driveState.Pose.transformBy(
-          new Transform2d(MODULE_LOCATIONS[i], driveState.ModuleStates[i].angle)
-      );
+    /**
+     * Resets the simulated robot to a new pose.
+     * Updates both ground truth physics and vision simulation.
+     *
+     * @param pose The new pose
+     */
+    public void resetSimPose(Pose2d pose) {
+        m_groundTruthSim.resetGroundTruthPoseForSim(pose);
+        m_visionSim.resetSimPose(pose);
     }
-    return modulePoses;
-  }
+
+    /**
+     * Gets the ground truth simulation interface for direct access
+     * (e.g., for injecting drift or cycling reset positions).
+     */
+    // $TODO - This should go AWAY
+    public GroundTruthSimInterface getGroundTruthSim() {
+        return m_groundTruthSim;
+    }
+
+    /**
+     * Transforms joystick inputs based on the operator's forward direction.
+     * Static method that can be called without a SimWrapper instance.
+     */
+    public static JoystickInputsRecord transformJoystickOrientation(
+            double degreesFieldForward,
+            double driveX,
+            double driveY,
+            double rotateX) {
+        return SimJoystickOrientation.simTransformJoystickOrientation(
+            degreesFieldForward, driveX, driveY, rotateX);
+    }
+
+    /**
+     * Get the Pose2d of each swerve module based on the current robot pose and module states.
+     */
+    private Pose2d[] getModulePoses(SwerveDrivetrain.SwerveDriveState driveState) {
+        Pose2d[] modulePoses = new Pose2d[4];
+        for (int i = 0; i < 4; i++) {
+            modulePoses[i] = driveState.Pose.transformBy(
+                new Transform2d(MODULE_LOCATIONS[i], driveState.ModuleStates[i].angle)
+            );
+        }
+        return modulePoses;
+    }
 }
