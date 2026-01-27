@@ -7,8 +7,11 @@ import com.ctre.phoenix6.swerve.SwerveDrivetrain;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import frc.robot.Robot;
 import frc.robot.generated.TunerConstants;
+import frc.robot.sim.visionproducers.VisionSimFactory;
+import frc.robot.sim.visionproducers.VisionSimInterface;
 
 import java.util.function.Consumer;
 
@@ -45,8 +48,7 @@ public class SimWrapper {
      */
     public SimWrapper(
             SwerveDrivetrain<TalonFX, TalonFX, CANcoder> drivetrain,
-            Consumer<Pose2d> poseResetConsumer,
-            VisionSimInterface.EstimateConsumer visionPoseConsumer) {
+            Consumer<Pose2d> poseResetConsumer) {
 
         if (!Robot.isSimulation()) {
             throw new IllegalStateException("SimWrapper should only be instantiated in simulation");
@@ -56,9 +58,6 @@ public class SimWrapper {
         }
         if (poseResetConsumer == null) {
             throw new IllegalArgumentException("Pose reset consumer cannot be null");
-        }
-        if (visionPoseConsumer == null) {
-            throw new IllegalArgumentException("Vision pose consumer cannot be null");
         }
 
         m_drivetrain = drivetrain;
@@ -71,7 +70,16 @@ public class SimWrapper {
         if (m_visionSim == null) {
             throw new IllegalStateException("VisionSimInterface creation failed");
         }
-        m_visionSim.subscribePoseEstimates(visionPoseConsumer);
+    }
+
+    public void subscribeToPhotonVisionPoseEstimates(
+            VisionSimInterface.EstimateConsumer consumer) {
+
+        if (consumer == null) {
+            throw new IllegalArgumentException("Vision pose consumer cannot be null");
+        }
+
+        m_visionSim.subscribeToPhotonVisionPoseEstimates(consumer);
     }
 
     /**
@@ -159,5 +167,14 @@ public class SimWrapper {
      */
     public void cycleResetPosition(Pose2d blueAlliancePose) {
         m_groundTruthSim.cycleResetPosition(blueAlliancePose);
+    }
+
+    /**
+     * Get the simulation debug Field2d for visualization.
+     * @return The VisionSystemSim's debug field, or null if not in simulation
+     */
+    // $TODO - We shouldnt expose this.  Find a better way to visualize sim info.
+    public Field2d getSimDebugField() {
+        return m_visionSim.getSimDebugField();
     }
 }

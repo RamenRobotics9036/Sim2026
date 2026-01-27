@@ -26,13 +26,18 @@ public class Robot extends TimedRobot {
 
     @Override
     public void robotPeriodic() {
-        m_timeAndJoystickReplay.update();
-        CommandScheduler.getInstance().run();
-
         // $TODO - Wrapper for sim features
         if (Robot.isSimulation() && m_robotContainer.m_simWrapper != null) {
+            // NOTE: We run the vision period FIRST in robotPeriodic, since it updates
+            // NetworkTables with the limelight data, in-case any code in this loop
+            // needs that info and doesnt want it delayed 20ms.
             m_robotContainer.m_simWrapper.robotPeriodic();
         }
+
+        m_robotContainer.m_limelightOdometry.periodic();
+
+        m_timeAndJoystickReplay.update();
+        CommandScheduler.getInstance().run();
     }
 
     @Override

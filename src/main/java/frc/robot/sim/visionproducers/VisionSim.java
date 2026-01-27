@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-package frc.robot.sim;
+package frc.robot.sim.visionproducers;
 
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
@@ -32,11 +32,13 @@ import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import frc.robot.Robot;
+import frc.robot.sim.visionproducers.VisionSimInterface.EstimateConsumer;
 
-import static frc.robot.sim.VisionSimConstants.Vision.*;
+import static frc.robot.sim.visionproducers.VisionSimConstants.Vision.*;
 
 import java.util.List;
 import java.util.Optional;
+
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
@@ -55,6 +57,9 @@ public class VisionSim implements VisionSimInterface {
     private PhotonCameraSim cameraSim;
     private VisionSystemSim visionSystemSim;
 
+    // Limelight NetworkTables publisher
+    private final LimelightTablePublisher limelightPublisher;
+
     public VisionSim() {
 
         // This is good sample code for PhotonVision usage in-general, but we spin this up ONLY for
@@ -66,6 +71,7 @@ public class VisionSim implements VisionSimInterface {
 
         camera = new PhotonCamera(kCameraName);
         photonEstimator = new PhotonPoseEstimator(kTagLayout, kRobotToCam);
+        limelightPublisher = new LimelightTablePublisher("limelight");
 
         // ----- Simulation
         if (Robot.isSimulation()) {
@@ -75,17 +81,17 @@ public class VisionSim implements VisionSimInterface {
             visionSystemSim.addAprilTags(kTagLayout);
             // Create simulated camera properties. These can be set to mimic your actual camera.
             var cameraProp = new SimCameraProperties();
-            cameraProp.setCalibration(960, 720, Rotation2d.fromDegrees(90));
-            cameraProp.setCalibError(0.35, 0.10);
-            cameraProp.setFPS(15);
-            cameraProp.setAvgLatencyMs(50);
-            cameraProp.setLatencyStdDevMs(15);
+            cameraProp.setCalibration(kCameraResWidth, kCameraResHeight, Rotation2d.fromDegrees(kCameraFOVDegrees));
+            cameraProp.setCalibError(kCalibErrorAvg, kCalibErrorStdDev);
+            cameraProp.setFPS(kCameraFPS);
+            cameraProp.setAvgLatencyMs(kAvgLatencyMs);
+            cameraProp.setLatencyStdDevMs(kLatencyStdDevMs);
             // Create a PhotonCameraSim which will update the linked PhotonCamera's values with visible
             // targets.
             cameraSim = new PhotonCameraSim(camera, cameraProp);
             // Set realistic detection range limits
-            cameraSim.setMinTargetAreaPixels(10.0); // Minimum pixel area for detection
-            cameraSim.setMaxSightRange(3.0); // Max detection distance in meters
+            cameraSim.setMinTargetAreaPixels(kMinTargetAreaPixels);
+            cameraSim.setMaxSightRange(kMaxSightRangeMeters);
             // Add the simulated camera to view the targets on this simulated field.
             visionSystemSim.addCamera(cameraSim, kRobotToCam);
 
@@ -99,12 +105,21 @@ public class VisionSim implements VisionSimInterface {
      *     {@link edu.wpi.first.math.estimator.SwerveDrivePoseEstimator}
      */
     @Override
-    public void subscribePoseEstimates(VisionSimInterface.EstimateConsumer consumer) {
+    public void subscribeToPhotonVisionPoseEstimates(VisionSimInterface.EstimateConsumer consumer) {
         this.estConsumer = consumer;
+
+        System.out.println("---------------------------------------------------");
+        System.out.println("PhotonVision pose estimates subscribed");
+        System.out.println("---------------------------------------------------");
     }
 
     @Override
     public void periodic() {
+        // We only do pose estimation if someone is subscribed
+        generatePoseEstimate();
+    }
+
+    private void generatePoseEstimate() {
         Optional<EstimatedRobotPose> visionEst = Optional.empty();
         for (var result : camera.getAllUnreadResults()) {
             visionEst = photonEstimator.estimateCoprocMultiTagPose(result);
@@ -113,16 +128,17 @@ public class VisionSim implements VisionSimInterface {
             }
             updateEstimationStdDevs(visionEst, result.getTargets());
 
-            if (Robot.isSimulation()) {
-                visionEst.ifPresentOrElse(
-                        est ->
-                                getSimDebugField()
-                                        .getObject("VisionEstimation")
-                                        .setPose(est.estimatedPose.toPose2d()),
-                        () -> {
-                            getSimDebugField().getObject("VisionEstimation").setPoses();
-                        });
-            }
+            // $TODO
+            // if (Robot.isSimulation()) {
+            //     visionEst.ifPresentOrElse(
+            //             est ->
+            //                     getSimDebugField()
+            //                             .getObject("VisionEstimation")
+            //                             .setPose(est.estimatedPose.toPose2d()),
+            //             () -> {
+            //                 getSimDebugField().getObject("VisionEstimation").setPoses();
+            //             });
+            // }
 
             visionEst.ifPresent(
                     est -> {
@@ -133,6 +149,17 @@ public class VisionSim implements VisionSimInterface {
                             estConsumer.accept(est.estimatedPose.toPose2d(), est.timestampSeconds, estStdDevs);
                         }
                     });
+
+            // Publish to Limelight NetworkTables for LimelightOdometry to consume
+            LimelightData data = PhotonToLimelightConverter.convertPipelineResult(result, kRobotToCam);
+            double totalLatencyMs = data.pipelineLatencyMs + data.captureLatencyMs;
+            PhotonToLimelightConverter.convertBotpose(
+                visionEst.map(est -> est.estimatedPose).orElse(null),
+                result.getTargets(),
+                kRobotToCam,
+                totalLatencyMs,
+                data);
+            limelightPublisher.publish(data);
         }
     }
 

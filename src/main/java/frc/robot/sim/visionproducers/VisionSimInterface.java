@@ -1,4 +1,4 @@
-package frc.robot.sim;
+package frc.robot.sim.visionproducers;
 
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -26,7 +26,7 @@ public interface VisionSimInterface {
      * @param consumer Lambda that will accept a pose estimate and pass it to your desired
      *     {@link edu.wpi.first.math.estimator.SwerveDrivePoseEstimator}
      */
-    void subscribePoseEstimates(EstimateConsumer consumer);
+    void subscribeToPhotonVisionPoseEstimates(EstimateConsumer consumer);
 
     /**
      * Process vision data. Should be called periodically (e.g., from robotPeriodic).

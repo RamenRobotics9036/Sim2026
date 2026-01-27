@@ -1,4 +1,4 @@
-package frc.robot.sim;
+package frc.robot.sim.visionproducers;
 
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
@@ -30,5 +30,17 @@ public class VisionSimConstants {
         // (Fake values. Experiment and determine estimation noise on an actual robot.)
         public static final Matrix<N3, N1> kSingleTagStdDevs = VecBuilder.fill(4, 4, 8);
         public static final Matrix<N3, N1> kMultiTagStdDevs = VecBuilder.fill(0.5, 0.5, 1);
+
+        // Camera simulation properties
+        public static final int kCameraResWidth = 960;
+        public static final int kCameraResHeight = 720;
+        public static final double kCameraFOVDegrees = 90.0;
+        public static final double kCalibErrorAvg = 0.35;
+        public static final double kCalibErrorStdDev = 0.10;
+        public static final double kCameraFPS = 15;
+        public static final double kAvgLatencyMs = 50;
+        public static final double kLatencyStdDevMs = 15;
+        public static final double kMinTargetAreaPixels = 10.0;
+        public static final double kMaxSightRangeMeters = 3.0;
     }
 }
