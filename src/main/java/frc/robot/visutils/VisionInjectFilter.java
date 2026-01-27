@@ -2,6 +2,8 @@ package frc.robot.visutils;
 
 import com.ctre.phoenix6.Utils;
 
+import edu.wpi.first.math.geometry.Pose2d;
+
 /**
  * Filters vision measurements around pose resets to prevent stale data from
  * corrupting a freshly reset pose.
@@ -29,6 +31,15 @@ public class VisionInjectFilter {
     /** Sentinel value indicating no pose reset has occurred yet, allowing vision to work immediately on startup */
     private static final double RESET_INIT_CONSTANT = -1.0;
 
+    /** How far back in time (seconds) before reset to start ignoring vision measurements */
+    private static final double IGNORE_WINDOW_START_OFFSET = 2.0;
+
+    /** How far forward in time (seconds) after reset to stop ignoring vision measurements */
+    private static final double IGNORE_WINDOW_END_OFFSET = 0.0;
+
+    /** Maximum allowed distance (meters) between vision pose and current pose */
+    private static final double MAX_DISTANCE_METERS = 5.0;
+
     /** Track the last time the pose was reset to filter stale vision measurements. */
     private double m_lastResetTimestamp = RESET_INIT_CONSTANT;
 
@@ -42,6 +53,28 @@ public class VisionInjectFilter {
         m_lastResetTimestamp = currentTimeSeconds;
     }
 
+    private boolean shouldIgnoreOldTimestamps(double timestampSeconds) {
+        if (m_lastResetTimestamp == RESET_INIT_CONSTANT) {
+            return false;
+        }
+
+        double convertedTimestamp = Utils.fpgaToCurrentTime(timestampSeconds);
+        double ignoreWindowStart = m_lastResetTimestamp - IGNORE_WINDOW_START_OFFSET;
+        double ignoreWindowEnd = m_lastResetTimestamp + IGNORE_WINDOW_END_OFFSET;
+
+        return convertedTimestamp >= ignoreWindowStart && convertedTimestamp <= ignoreWindowEnd;
+    }
+
+    private boolean shouldIgnoreFarAway(Pose2d pose1, Pose2d pose2) {
+        // Can't calculate distance with null poses
+        if (pose1 == null || pose2 == null) {
+            return true;
+        }
+
+        double distanceMeters = pose1.getTranslation().getDistance(pose2.getTranslation());
+        return distanceMeters > MAX_DISTANCE_METERS;
+    }
+
     /**
      * Determines if a vision measurement should be ignored based on its timestamp
      * relative to the last pose reset.
@@ -49,15 +82,19 @@ public class VisionInjectFilter {
      * @param timestampSeconds The timestamp of the vision measurement in seconds (FPGA time).
      * @return true if the measurement should be ignored, false otherwise.
      */
-    public boolean shouldIgnore(double timestampSeconds) {
-        if (m_lastResetTimestamp == RESET_INIT_CONSTANT) {
-            return false;
+    public boolean shouldIgnore(
+        Pose2d newVisionRobotPose,
+        Pose2d currentRobotPose,
+        double timestampSeconds) {
+
+        if (shouldIgnoreOldTimestamps(timestampSeconds)) {
+            return true;
         }
 
-        double convertedTimestamp = Utils.fpgaToCurrentTime(timestampSeconds);
-        double ignoreWindowStart = m_lastResetTimestamp - 2.0;
-        double ignoreWindowEnd = m_lastResetTimestamp + 0.0;
+        if (shouldIgnoreFarAway(newVisionRobotPose, currentRobotPose)) {
+            return true;
+        }
 
-        return convertedTimestamp >= ignoreWindowStart && convertedTimestamp <= ignoreWindowEnd;
+        return false;
     }
 }
