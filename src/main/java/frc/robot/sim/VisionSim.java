@@ -75,17 +75,17 @@ public class VisionSim implements VisionSimInterface {
             visionSystemSim.addAprilTags(kTagLayout);
             // Create simulated camera properties. These can be set to mimic your actual camera.
             var cameraProp = new SimCameraProperties();
-            cameraProp.setCalibration(960, 720, Rotation2d.fromDegrees(90));
-            cameraProp.setCalibError(0.35, 0.10);
-            cameraProp.setFPS(15);
-            cameraProp.setAvgLatencyMs(50);
-            cameraProp.setLatencyStdDevMs(15);
+            cameraProp.setCalibration(kCameraResWidth, kCameraResHeight, Rotation2d.fromDegrees(kCameraFOVDegrees));
+            cameraProp.setCalibError(kCalibErrorAvg, kCalibErrorStdDev);
+            cameraProp.setFPS(kCameraFPS);
+            cameraProp.setAvgLatencyMs(kAvgLatencyMs);
+            cameraProp.setLatencyStdDevMs(kLatencyStdDevMs);
             // Create a PhotonCameraSim which will update the linked PhotonCamera's values with visible
             // targets.
             cameraSim = new PhotonCameraSim(camera, cameraProp);
             // Set realistic detection range limits
-            cameraSim.setMinTargetAreaPixels(10.0); // Minimum pixel area for detection
-            cameraSim.setMaxSightRange(3.0); // Max detection distance in meters
+            cameraSim.setMinTargetAreaPixels(kMinTargetAreaPixels);
+            cameraSim.setMaxSightRange(kMaxSightRangeMeters);
             // Add the simulated camera to view the targets on this simulated field.
             visionSystemSim.addCamera(cameraSim, kRobotToCam);
 
