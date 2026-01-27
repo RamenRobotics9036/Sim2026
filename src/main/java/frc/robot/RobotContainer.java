@@ -24,6 +24,7 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 
 import frc.robot.generated.TunerConstants;
 import frc.robot.sim.JoystickInputsRecord;
+import frc.robot.sim.PhotoToLimelight;
 import frc.robot.sim.SimWrapper;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 
@@ -55,6 +56,9 @@ public class RobotContainer {
     /** Simulation wrapper - null when not in simulation */
     public final SimWrapper m_simWrapper;
 
+    /** PhotoToLimelight for tx/ty debugging - null when not in simulation */
+    private final PhotoToLimelight m_photoToLimelight;
+
     public RobotContainer() {
        autoChooser = AutoBuilder.buildAutoChooser("Tests");
         initAutoSelector();
@@ -67,9 +71,11 @@ public class RobotContainer {
                 drivetrain,
                 this::resetRobotPose,
                 drivetrain::addVisionMeasurement);
+            m_photoToLimelight = new PhotoToLimelight();
         }
         else {
             m_simWrapper = null;
+            m_photoToLimelight = null;
         }
 
         // Warmup PathPlanner to avoid Java pauses
@@ -196,6 +202,16 @@ public class RobotContainer {
         // $TODO - Clean reset
         if (Robot.isSimulation()) {
             m_simWrapper.resetSimPose(pose);
+        }
+    }
+
+    /**
+     * Runs the PhotoToLimelight periodic update.
+     * Called from Robot.robotPeriodic() in simulation.
+     */
+    public void runPhotoToLimelightPeriodic() {
+        if (m_photoToLimelight != null) {
+            m_photoToLimelight.periodic();
         }
     }
 }
