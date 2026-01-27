@@ -32,7 +32,7 @@ public class Robot extends TimedRobot {
         // $TODO - Wrapper for sim features
         if (Robot.isSimulation() && m_robotContainer.m_simWrapper != null) {
             m_robotContainer.m_simWrapper.robotPeriodic();
-            m_robotContainer.runPhotoToLimelightPeriodic();
+            m_robotContainer.runPhotonToLimelightPeriodic();
         }
     }
 

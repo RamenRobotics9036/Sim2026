@@ -8,13 +8,13 @@ import frc.robot.Robot;
 /**
  * Simpler vision processor that just prints tx/ty values from PhotonVision targets.
  */
-public class PhotoToLimelight {
+public class PhotonToLimelight {
     private final PhotonCamera camera;
 
-    public PhotoToLimelight() {
+    public PhotonToLimelight() {
         if (!Robot.isSimulation()) {
             throw new IllegalStateException(
-                "PhotoToLimelight should only be instantiated in simulation");
+                "PhotonToLimelight should only be instantiated in simulation");
         }
 
         camera = new PhotonCamera(kCameraName);
