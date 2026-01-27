@@ -144,6 +144,22 @@ Each fiducial entry has 7 values:
 
 ---
 
+## File Structure
+
+All files will be placed in:
+```
+src/main/java/frc/robot/simphotontolimelight/
+├── CameraMapping.java
+├── LimelightData.java
+├── LimelightTablePublisher.java
+├── PhotonToLimelight.java
+└── PhotonToLimelightConverter.java
+```
+
+Package: `frc.robot.simphotontolimelight`
+
+---
+
 ## Design: Class Structure
 
 ### 1. LimelightData (Data Container)
@@ -151,7 +167,7 @@ Each fiducial entry has 7 values:
 Pure Java data class with no external dependencies. Holds all Limelight-formatted values.
 
 ```java
-package frc.robot.sim;
+package frc.robot.simphotontolimelight;
 
 /**
  * Pure data container representing Limelight NetworkTables data format.
@@ -188,7 +204,7 @@ public class LimelightData {
 Static methods that transform PhotonVision data to `LimelightData`. No I/O, no side effects.
 
 ```java
-package frc.robot.sim;
+package frc.robot.simphotontolimelight;
 
 import org.photonvision.targeting.PhotonPipelineResult;
 import org.photonvision.targeting.PhotonTrackedTarget;
@@ -353,7 +369,7 @@ public class PhotonToLimelightConverter {
 Writes `LimelightData` to NetworkTables. This is the only class with NT dependencies.
 
 ```java
-package frc.robot.sim;
+package frc.robot.simphotontolimelight;
 
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
@@ -403,7 +419,7 @@ public class LimelightTablePublisher {
 Defines the mapping between a PhotonVision camera and its corresponding Limelight table.
 
 ```java
-package frc.robot.sim;
+package frc.robot.simphotontolimelight;
 
 import edu.wpi.first.math.geometry.Transform3d;
 
@@ -428,7 +444,7 @@ public class CameraMapping {
 Updated main class that manages multiple camera-to-limelight mappings.
 
 ```java
-package frc.robot.sim;
+package frc.robot.simphotontolimelight;
 
 import org.photonvision.PhotonCamera;
 import frc.robot.Robot;
@@ -493,6 +509,8 @@ public class PhotonToLimelight {
 ### Usage Example
 
 ```java
+import frc.robot.simphotontolimelight.*;
+
 // Single camera (simple)
 PhotonToLimelight bridge = new PhotonToLimelight(
     new CameraMapping("photonvision", "limelight", kFrontCameraTransform)
@@ -513,29 +531,31 @@ bridge.periodic();  // Updates all cameras
 
 ## Implementation Tasks
 
-### New Classes
-1. [ ] Create `LimelightData.java` - pure data container
-2. [ ] Create `PhotonToLimelightConverter.java` - static transformation methods
-3. [ ] Create `LimelightTablePublisher.java` - NetworkTables I/O
-4. [ ] Create `CameraMapping.java` - per-camera configuration record
+### New Classes (in `frc.robot.simphotontolimelight` package)
+1. [ ] Create `simphotontolimelight/LimelightData.java` - pure data container
+2. [ ] Create `simphotontolimelight/PhotonToLimelightConverter.java` - static transformation methods
+3. [ ] Create `simphotontolimelight/LimelightTablePublisher.java` - NetworkTables I/O
+4. [ ] Create `simphotontolimelight/CameraMapping.java` - per-camera configuration record
+5. [ ] Move/refactor `PhotonToLimelight.java` from `sim/` to `simphotontolimelight/`
 
 ### Converter Methods
-5. [ ] Implement `convertTarget(PhotonTrackedTarget, LimelightData)`
-6. [ ] Implement `convertTargetPose3d(PhotonTrackedTarget, LimelightData)`
-7. [ ] Implement `convertRawFiducials(List<PhotonTrackedTarget>, Transform3d, LimelightData)`
-8. [ ] Implement `convertLatency(PhotonPipelineResult, LimelightData)`
-9. [ ] Implement `convertT2D(...)`
-10. [ ] Implement `convertPipelineResult(...)` convenience method
+6. [ ] Implement `convertTarget(PhotonTrackedTarget, LimelightData)`
+7. [ ] Implement `convertTargetPose3d(PhotonTrackedTarget, LimelightData)`
+8. [ ] Implement `convertRawFiducials(List<PhotonTrackedTarget>, Transform3d, LimelightData)`
+9. [ ] Implement `convertLatency(PhotonPipelineResult, LimelightData)`
+10. [ ] Implement `convertT2D(...)`
+11. [ ] Implement `convertPipelineResult(...)` convenience method
 
 ### Multi-Camera Support
-11. [ ] Update `PhotonToLimelight` to accept `List<CameraMapping>`
-12. [ ] Implement `CameraInstance` inner class to hold camera + publisher pairs
-13. [ ] Update `periodic()` to iterate over all camera instances
+12. [ ] Update `PhotonToLimelight` to accept `List<CameraMapping>`
+13. [ ] Implement `CameraInstance` inner class to hold camera + publisher pairs
+14. [ ] Update `periodic()` to iterate over all camera instances
 
 ### Integration
-14. [ ] Update existing usage to use new `CameraMapping` constructor
-15. [ ] Test with existing LimelightHelpers usage to verify compatibility
-16. [ ] Test multi-camera scenario with different table names
+15. [ ] Update existing usage to use new `CameraMapping` constructor
+16. [ ] Update imports to reference new `simphotontolimelight` package
+17. [ ] Test with existing LimelightHelpers usage to verify compatibility
+18. [ ] Test multi-camera scenario with different table names
 
 ---
 
