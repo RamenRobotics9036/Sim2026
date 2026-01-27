@@ -58,13 +58,27 @@ public class VisionSimConstants {
             // Create a mutable list with all existing tags
             var tags = new ArrayList<>(baseLayout.getTags());
 
-            // Add custom tag 101 at field center (16.541m x 8.069m field)
-            // Placed at center, 0.5m height, facing toward blue alliance (+X direction)
+            // Add custom tag 101 on the side of the field (16.541m x 8.069m field)
+            // Placed at center X, near Y=max edge, 0.5m height, facing into field (-Y direction)
+            double x = 8.2705;  // center of field length
+            double y = 7.569;   // near the opposite side wall (8.069 - 0.5)
+            double z = 0.5;     // 0.5m height
+            double distanceApart = 0.7;
+
+            // Add tag 101 to the left of x
             tags.add(new AprilTag(101, new Pose3d(
-                8.2705,  // x: center of field length
-                4.0345,  // y: center of field width
-                0.5,     // z: 0.5m height
-                new Rotation3d(0, 0, 0)  // facing +X (toward blue alliance)
+                x - distanceApart / 2,
+                y,
+                z,
+                new Rotation3d(0, 0, -Math.PI / 2)  // facing -Y (into the field)
+            )));
+
+            // Add tag 102 to the right of x
+            tags.add(new AprilTag(102, new Pose3d(
+                x + distanceApart / 2,
+                y,
+                z,
+                new Rotation3d(0, 0, -Math.PI / 2)
             )));
 
             return new AprilTagFieldLayout(tags, baseLayout.getFieldLength(), baseLayout.getFieldWidth());
