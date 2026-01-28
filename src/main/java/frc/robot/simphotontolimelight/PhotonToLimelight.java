@@ -1,6 +1,7 @@
 package frc.robot.simphotontolimelight;
 
 import org.photonvision.PhotonCamera;
+import frc.robot.LimelightHelpers;
 import frc.robot.Robot;
 import java.util.ArrayList;
 import java.util.List;
@@ -56,9 +57,13 @@ public class PhotonToLimelight {
                     result, instance.mapping.robotToCamera);
                 instance.publisher.publish(data);
 
-                //if (data.tid != -1) {
-                //    System.out.println("Detected fiducial ID: " + data.tid);
-                //}
+                // $TODO - Read back from LimelightHelpers and print fiducial info
+                LimelightHelpers.RawFiducial[] fiducials =
+                    LimelightHelpers.getRawFiducials(instance.mapping.limelightTableName);
+                for (LimelightHelpers.RawFiducial f : fiducials) {
+                    System.out.printf("[%s] Fiducial ID=%d tx=%.2f ty=%.2f ta=%.2f distCam=%.2fm distRobot=%.2fm ambiguity=%.3f%n",
+                        instance.mapping.limelightTableName, f.id, f.txnc, f.tync, f.ta, f.distToCamera, f.distToRobot, f.ambiguity);
+                }
             }
         }
     }

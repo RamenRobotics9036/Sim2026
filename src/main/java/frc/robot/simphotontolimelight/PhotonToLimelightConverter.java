@@ -4,7 +4,6 @@ import org.photonvision.targeting.PhotonPipelineResult;
 import org.photonvision.targeting.PhotonTrackedTarget;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.util.Units;
-import edu.wpi.first.wpilibj.Timer;
 import java.util.List;
 
 /**
@@ -78,18 +77,12 @@ public class PhotonToLimelightConverter {
 
     /**
      * Convert latency data from pipeline result.
-     * For simulation, we compute latency from the result timestamp vs current time.
      */
     public static void convertLatency(PhotonPipelineResult result, LimelightData data) {
-        // Compute total latency as difference between now and when the frame was captured
-        double captureTimeSec = result.getTimestampSeconds();
-        double nowSec = Timer.getFPGATimestamp();
-        double totalLatencyMs = (nowSec - captureTimeSec) * 1000.0;
+        data.pipelineLatencyMs = result.metadata.getLatencyMillis();
 
-        // Split roughly: capture latency is smaller, pipeline is the bulk
-        data.captureLatencyMs = Math.max(0, totalLatencyMs * 0.2);
-        data.pipelineLatencyMs = Math.max(0, totalLatencyMs * 0.8);
-    }
+        // Capture latency is typically small; use a nominal value for simulation
+        data.captureLatencyMs = 5.0;    }
 
     /**
      * Build the t2d array from targets and latency.
