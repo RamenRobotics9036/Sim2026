@@ -35,6 +35,8 @@ public class Robot extends TimedRobot {
             m_robotContainer.runPhotonToLimelightPeriodic();
         }
 
+        m_robotContainer.m_megatagOdometry.periodic();
+
         m_timeAndJoystickReplay.update();
         CommandScheduler.getInstance().run();
     }

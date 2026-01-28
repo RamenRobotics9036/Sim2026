@@ -29,6 +29,7 @@ import frc.robot.sim.VisionSimConstants.Vision;
 import frc.robot.simphotontolimelight.CameraMapping;
 import frc.robot.simphotontolimelight.PhotonToLimelight;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
+import frc.robot.visutils.MegatagOdometry;
 
 public class RobotContainer {
     private double MaxSpeed = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
@@ -61,6 +62,8 @@ public class RobotContainer {
     /** PhotonToLimelight for tx/ty debugging - null when not in simulation */
     private final PhotonToLimelight m_photonToLimelight;
 
+    public final MegatagOdometry m_megatagOdometry;
+
     public RobotContainer() {
        autoChooser = AutoBuilder.buildAutoChooser("Tests");
         initAutoSelector();
@@ -83,6 +86,9 @@ public class RobotContainer {
             m_simWrapper = null;
             m_photonToLimelight = null;
         }
+
+        m_megatagOdometry = new MegatagOdometry();
+        m_megatagOdometry.subscribePoseEstimates(drivetrain::addVisionMeasurement);
 
         // Warmup PathPlanner to avoid Java pauses
         FollowPathCommand.warmupCommand().schedule();
