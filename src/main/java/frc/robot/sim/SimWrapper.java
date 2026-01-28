@@ -45,8 +45,7 @@ public class SimWrapper {
      */
     public SimWrapper(
             SwerveDrivetrain<TalonFX, TalonFX, CANcoder> drivetrain,
-            Consumer<Pose2d> poseResetConsumer,
-            VisionSimInterface.EstimateConsumer visionPoseConsumer) {
+            Consumer<Pose2d> poseResetConsumer) {
 
         if (!Robot.isSimulation()) {
             throw new IllegalStateException("SimWrapper should only be instantiated in simulation");
@@ -56,9 +55,6 @@ public class SimWrapper {
         }
         if (poseResetConsumer == null) {
             throw new IllegalArgumentException("Pose reset consumer cannot be null");
-        }
-        if (visionPoseConsumer == null) {
-            throw new IllegalArgumentException("Vision pose consumer cannot be null");
         }
 
         m_drivetrain = drivetrain;
@@ -71,7 +67,16 @@ public class SimWrapper {
         if (m_visionSim == null) {
             throw new IllegalStateException("VisionSimInterface creation failed");
         }
-        m_visionSim.subscribePoseEstimates(visionPoseConsumer);
+    }
+
+    public void optionalSubscribeToPoseEstimates(
+            VisionSimInterface.EstimateConsumer consumer) {
+
+        if (consumer == null) {
+            throw new IllegalArgumentException("Vision pose consumer cannot be null");
+        }
+
+        m_visionSim.subscribePoseEstimates(consumer);
     }
 
     /**

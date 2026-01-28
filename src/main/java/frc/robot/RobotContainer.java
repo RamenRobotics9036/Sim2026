@@ -71,8 +71,11 @@ public class RobotContainer {
         if (Robot.isSimulation()) {
             m_simWrapper = new SimWrapper(
                 drivetrain,
-                this::resetRobotPose,
-                drivetrain::addVisionMeasurement);
+                this::resetRobotPose);
+
+            // If we have our own pose generator, we can turn off this optional demo
+            //m_simWrapper.optionalSubscribeToPoseEstimates(drivetrain::addVisionMeasurement);
+
             m_photonToLimelight = new PhotonToLimelight(
                 new CameraMapping(Vision.kCameraName, "limelight", Vision.kRobotToCam));
         }
