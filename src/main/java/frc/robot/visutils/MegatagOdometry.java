@@ -32,7 +32,7 @@ public class MegatagOdometry {
         if (doPoseEstimating) {
             // For now, just create 2d pose at origin.  stdDevs is hardcoded to medium confidence.
             Matrix<N3, N1> stdDevs = VecBuilder.fill(0.15, 0.15, 3.0); // x, y, heading
-            estConsumer.accept(new edu.wpi.first.math.geometry.Pose2d(), 0.0, stdDevs);
+            estConsumer.accept(new edu.wpi.first.math.geometry.Pose2d(), edu.wpi.first.wpilibj.Timer.getFPGATimestamp(), stdDevs);
         }
     }
 
