@@ -24,7 +24,7 @@ public class MegatagOdometry {
         doPoseEstimating = true;
 
         System.out.println("---------------------------------------------------");
-        System.out.println("VMegatagOdometry: Limelight for pose estimates");
+        System.out.println("MegatagOdometry: Limelight for pose estimates");
         System.out.println("---------------------------------------------------");
     }
 
