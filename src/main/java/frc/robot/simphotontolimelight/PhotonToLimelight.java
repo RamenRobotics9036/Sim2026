@@ -1,10 +1,17 @@
 package frc.robot.simphotontolimelight;
 
 import org.photonvision.PhotonCamera;
+import org.photonvision.PhotonPoseEstimator;
+import org.photonvision.PhotonPoseEstimator.PoseStrategy;
+import org.photonvision.EstimatedRobotPose;
+import org.photonvision.targeting.PhotonPipelineResult;
+import edu.wpi.first.math.geometry.Pose3d;
 import frc.robot.LimelightHelpers;
 import frc.robot.Robot;
+import frc.robot.sim.VisionSimConstants;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Manages multiple PhotonVision cameras, publishing each to its own Limelight table.
@@ -16,11 +23,17 @@ public class PhotonToLimelight {
         final PhotonCamera camera;
         final LimelightTablePublisher publisher;
         final CameraMapping mapping;
+        final PhotonPoseEstimator poseEstimator;
 
         CameraInstance(CameraMapping mapping) {
             this.mapping = mapping;
             this.camera = new PhotonCamera(mapping.photonCameraName);
             this.publisher = new LimelightTablePublisher(mapping.limelightTableName);
+            this.poseEstimator = new PhotonPoseEstimator(
+                VisionSimConstants.Vision.kTagLayout,
+                PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
+                mapping.robotToCamera);
+            this.poseEstimator.setMultiTagFallbackStrategy(PoseStrategy.LOWEST_AMBIGUITY);
         }
     }
 
@@ -52,9 +65,22 @@ public class PhotonToLimelight {
      */
     public void periodic() {
         for (CameraInstance instance : cameras) {
-            for (var result : instance.camera.getAllUnreadResults()) {
+            for (PhotonPipelineResult result : instance.camera.getAllUnreadResults()) {
                 LimelightData data = PhotonToLimelightConverter.convertPipelineResult(
                     result, instance.mapping.robotToCamera);
+
+                // Estimate robot pose and convert to botpose format
+                Optional<EstimatedRobotPose> estimatedPose = instance.poseEstimator.update(result);
+                Pose3d robotPose = estimatedPose.map(est -> est.estimatedPose).orElse(null);
+                double totalLatencyMs = data.pipelineLatencyMs + data.captureLatencyMs;
+
+                PhotonToLimelightConverter.convertBotpose(
+                    robotPose,
+                    result.getTargets(),
+                    instance.mapping.robotToCamera,
+                    totalLatencyMs,
+                    data);
+
                 instance.publisher.publish(data);
 
                 // $TODO - Read back from LimelightHelpers and print fiducial info

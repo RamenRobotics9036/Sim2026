@@ -39,5 +39,12 @@ public class LimelightTablePublisher {
 
         // t2d array
         table.getEntry("t2d").setDoubleArray(data.t2d);
+
+        // Bot pose arrays for pose estimation
+        table.getEntry("botpose_wpiblue").setDoubleArray(data.botposeWpiBlue);
+        table.getEntry("botpose_wpired").setDoubleArray(data.botposeWpiRed);
+        // Also publish as MegaTag2 format (same data for simulation purposes)
+        table.getEntry("botpose_orb_wpiblue").setDoubleArray(data.botposeWpiBlue);
+        table.getEntry("botpose_orb_wpired").setDoubleArray(data.botposeWpiRed);
     }
 }

@@ -27,4 +27,9 @@ public class LimelightData {
 
     // t2d array (17 elements)
     public double[] t2d = new double[17];
+
+    // Bot pose arrays for pose estimation (11 + 7*tagCount elements)
+    // Format: x, y, z, roll, pitch, yaw, latency, tagCount, tagSpan, avgDist, avgArea, [rawFiducials...]
+    public double[] botposeWpiBlue = new double[0];
+    public double[] botposeWpiRed = new double[0];
 }
