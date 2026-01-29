@@ -25,6 +25,7 @@ public class MegatagOdometry {
     private VisionSimInterface.EstimateConsumer estConsumer;
     private final Field2d debugField;
     private Matrix<N3, N1> curStdDevs = kSingleTagStdDevs;
+    private double lastTimestamp = 0;
 
     /**
      * Subscribe to pose estimates from this vision system.
@@ -58,6 +59,12 @@ public class MegatagOdometry {
             return;
         }
 
+        // Skip if this is the same data we already processed
+        if (mt1.timestampSeconds == lastTimestamp) {
+            return;
+        }
+        lastTimestamp = mt1.timestampSeconds;
+
         // Update std devs based on tag count and distance
         updateEstimationStdDevs(mt1);
 
@@ -76,6 +83,10 @@ public class MegatagOdometry {
         if (curStdDevs.get(0, 0) == Double.MAX_VALUE) {
             return;
         }
+
+        // Print # of tags matching AND the stddevs values
+        System.out.printf("MegatagOdometry: Adding vision measurement with %d tags, stdDevs=(%.2f, %.2f, %.2f)%n",
+            mt1.tagCount, curStdDevs.get(0, 0), curStdDevs.get(1, 0), curStdDevs.get(2, 0));
 
         estConsumer.accept(mt1.pose, mt1.timestampSeconds, curStdDevs);
 
