@@ -46,10 +46,6 @@ import org.photonvision.simulation.SimCameraProperties;
 import org.photonvision.simulation.VisionSystemSim;
 import org.photonvision.targeting.PhotonTrackedTarget;
 
-import frc.robot.simphotontolimelight.LimelightData;
-import frc.robot.simphotontolimelight.LimelightTablePublisher;
-import frc.robot.simphotontolimelight.PhotonToLimelightConverter;
-
 public class VisionSim implements VisionSimInterface {
     private final PhotonCamera camera;
     private final PhotonPoseEstimator photonEstimator;

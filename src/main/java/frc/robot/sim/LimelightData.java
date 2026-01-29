@@ -1,4 +1,4 @@
-package frc.robot.simphotontolimelight;
+package frc.robot.sim;
 
 /**
  * Pure data container representing Limelight NetworkTables data format.

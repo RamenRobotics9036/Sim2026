@@ -1,4 +1,4 @@
-package frc.robot.simphotontolimelight;
+package frc.robot.sim;
 
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
