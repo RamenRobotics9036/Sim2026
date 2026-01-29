@@ -8,6 +8,8 @@ import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import frc.robot.LimelightHelpers;
 import frc.robot.sim.VisionSimInterface;
 
+import static frc.robot.sim.VisionSimConstants.Vision.*;
+
 
 public class MegatagOdometry {
 
@@ -22,6 +24,7 @@ public class MegatagOdometry {
     private boolean doPoseEstimating = false;
     private VisionSimInterface.EstimateConsumer estConsumer;
     private final Field2d debugField;
+    private Matrix<N3, N1> curStdDevs = kSingleTagStdDevs;
 
     /**
      * Subscribe to pose estimates from this vision system.
@@ -47,41 +50,38 @@ public class MegatagOdometry {
     }
 
     private void addVisionMeasurementV1() {
-        boolean doRejectUpdate = false;
         LimelightHelpers.PoseEstimate mt1 = LimelightHelpers.getBotPoseEstimate_wpiBlue("limelight");
 
         if (mt1 == null) {
-            // $TODO - I dont think this should ever be needed.
             // In simulation, limelight may not be present until a few cycles of periodic, since we
             // populate it via NetworkTables later.
             return;
         }
 
-        if(mt1.tagCount == 1 && mt1.rawFiducials.length == 1)
-        {
-            if(mt1.rawFiducials[0].ambiguity > .7)
-            {
-                doRejectUpdate = true;
-            }
-            if(mt1.rawFiducials[0].distToCamera > 3)
-            {
-                doRejectUpdate = true;
-            }
-        }
-        if(mt1.tagCount == 0)
-        {
-            doRejectUpdate = true;
+        // Update std devs based on tag count and distance
+        updateEstimationStdDevs(mt1);
+
+        // Check if we should reject this update
+        if (mt1.tagCount == 0) {
+            return;
         }
 
-        if(!doRejectUpdate)
-        {
-            Matrix<N3, N1> stdDevs = VecBuilder.fill(.5, .5, 9999999);
-            estConsumer.accept(mt1.pose, mt1.timestampSeconds, stdDevs);
-
-            // Add this point-in-time vision pose estimate to the debug field
-            if (debugField != null) {
-                debugField.getObject("VisionEstimation").setPose(mt1.pose);
+        if (mt1.tagCount == 1 && mt1.rawFiducials.length == 1) {
+            if (mt1.rawFiducials[0].ambiguity > 0.7) {
+                return;
             }
+        }
+
+        // Check if std devs indicate rejection
+        if (curStdDevs.get(0, 0) == Double.MAX_VALUE) {
+            return;
+        }
+
+        estConsumer.accept(mt1.pose, mt1.timestampSeconds, curStdDevs);
+
+        // Add this point-in-time vision pose estimate to the debug field
+        if (debugField != null) {
+            debugField.getObject("VisionEstimation").setPose(mt1.pose);
         }
     }
 
@@ -106,4 +106,38 @@ public class MegatagOdometry {
     //             mt2.timestampSeconds);
     //     }
     // }
+
+    /**
+     * Calculates new standard deviations. This algorithm is a heuristic that creates dynamic standard
+     * deviations based on number of tags and distance from the tags.
+     *
+     * @param poseEstimate The Limelight pose estimate to evaluate
+     */
+    private void updateEstimationStdDevs(LimelightHelpers.PoseEstimate poseEstimate) {
+        if (poseEstimate == null || poseEstimate.tagCount == 0) {
+            // No pose input. Default to single-tag std devs
+            curStdDevs = kSingleTagStdDevs;
+            return;
+        }
+
+        // Pose present. Start running Heuristic
+        var estStdDevs = kSingleTagStdDevs;
+        int numTags = poseEstimate.tagCount;
+        double avgDist = poseEstimate.avgTagDist;
+
+        // One or more tags visible, run the full heuristic.
+        // Decrease std devs if multiple targets are visible
+        if (numTags > 1) {
+            estStdDevs = kMultiTagStdDevs;
+        }
+
+        // Increase std devs based on (average) distance
+        if (numTags == 1 && avgDist > 4) {
+            estStdDevs = VecBuilder.fill(Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE);
+        } else {
+            estStdDevs = estStdDevs.times(1 + (avgDist * avgDist / 30));
+        }
+
+        curStdDevs = estStdDevs;
+    }
 }
