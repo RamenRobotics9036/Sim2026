@@ -1,4 +1,4 @@
-package frc.robot.sim;
+package frc.robot.sim.visionproducers;
 
 import org.photonvision.targeting.PhotonPipelineResult;
 import org.photonvision.targeting.PhotonTrackedTarget;

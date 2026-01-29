@@ -1,4 +1,4 @@
-package frc.robot.sim;
+package frc.robot.sim.visionproducers;
 
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;

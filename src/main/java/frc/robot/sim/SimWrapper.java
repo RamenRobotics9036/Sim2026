@@ -10,6 +10,8 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import frc.robot.Robot;
 import frc.robot.generated.TunerConstants;
+import frc.robot.sim.visionproducers.VisionSimFactory;
+import frc.robot.sim.visionproducers.VisionSimInterface;
 
 import java.util.function.Consumer;
 

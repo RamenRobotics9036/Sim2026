@@ -6,9 +6,9 @@ import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import frc.robot.LimelightHelpers;
-import frc.robot.sim.VisionSimInterface;
+import frc.robot.sim.visionproducers.VisionSimInterface;
 
-import static frc.robot.sim.VisionSimConstants.Vision.*;
+import static frc.robot.sim.visionproducers.VisionSimConstants.Vision.*;
 
 import java.util.concurrent.ExecutionException;
 

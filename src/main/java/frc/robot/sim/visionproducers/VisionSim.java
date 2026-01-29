@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-package frc.robot.sim;
+package frc.robot.sim.visionproducers;
 
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
@@ -32,8 +32,9 @@ import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import frc.robot.Robot;
+import frc.robot.sim.visionproducers.VisionSimInterface.EstimateConsumer;
 
-import static frc.robot.sim.VisionSimConstants.Vision.*;
+import static frc.robot.sim.visionproducers.VisionSimConstants.Vision.*;
 
 import java.util.List;
 import java.util.Optional;

@@ -1,4 +1,4 @@
-package frc.robot.sim;
+package frc.robot.sim.visionproducers;
 
 /**
  * Pure data container representing Limelight NetworkTables data format.
