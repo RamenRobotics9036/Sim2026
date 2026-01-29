@@ -32,7 +32,6 @@ public class Robot extends TimedRobot {
             // NetworkTables with the limelight data, in-case any code in this loop
             // needs that info and doesnt want it delayed 20ms.
             m_robotContainer.m_simWrapper.robotPeriodic();
-            m_robotContainer.runPhotonToLimelightPeriodic();
         }
 
         m_robotContainer.m_megatagOdometry.periodic();

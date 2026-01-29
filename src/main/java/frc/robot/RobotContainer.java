@@ -60,9 +60,6 @@ public class RobotContainer {
     /** Simulation wrapper - null when not in simulation */
     public final SimWrapper m_simWrapper;
 
-    /** PhotonToLimelight for tx/ty debugging - null when not in simulation */
-    private final PhotonToLimelight m_photonToLimelight;
-
     public final MegatagOdometry m_megatagOdometry;
 
     public RobotContainer() {
@@ -78,14 +75,10 @@ public class RobotContainer {
                 this::resetRobotPose);
 
             // If we have our own pose generator, we can turn off this optional demo
-            //m_simWrapper.optionalSubscribeToPoseEstimates(drivetrain::addVisionMeasurement);
-
-            m_photonToLimelight = new PhotonToLimelight(
-                new CameraMapping(Vision.kCameraName, "limelight", Vision.kRobotToCam));
+            m_simWrapper.optionalSubscribeToPoseEstimates(drivetrain::addVisionMeasurement);
         }
         else {
             m_simWrapper = null;
-            m_photonToLimelight = null;
         }
 
         // $TODO - I dont like how we expose debugfield
@@ -218,16 +211,6 @@ public class RobotContainer {
         // $TODO - Clean reset
         if (Robot.isSimulation()) {
             m_simWrapper.resetSimPose(pose);
-        }
-    }
-
-    /**
-     * Runs the PhotonToLimelight periodic update.
-     * Called from Robot.robotPeriodic() in simulation.
-     */
-    public void runPhotonToLimelightPeriodic() {
-        if (m_photonToLimelight != null) {
-            m_photonToLimelight.periodic();
         }
     }
 }
