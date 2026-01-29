@@ -83,13 +83,13 @@ public class PhotonToLimelight {
 
                 instance.publisher.publish(data);
 
-                // $TODO - Read back from LimelightHelpers and print fiducial info
-                LimelightHelpers.RawFiducial[] fiducials =
-                    LimelightHelpers.getRawFiducials(instance.mapping.limelightTableName);
-                for (LimelightHelpers.RawFiducial f : fiducials) {
-                    System.out.printf("[%s] Fiducial ID=%d tx=%.2f ty=%.2f ta=%.2f distCam=%.2fm distRobot=%.2fm ambiguity=%.3f%n",
-                        instance.mapping.limelightTableName, f.id, f.txnc, f.tync, f.ta, f.distToCamera, f.distToRobot, f.ambiguity);
-                }
+                // Read back from LimelightHelpers and print fiducial info
+                // LimelightHelpers.RawFiducial[] fiducials =
+                //     LimelightHelpers.getRawFiducials(instance.mapping.limelightTableName);
+                // for (LimelightHelpers.RawFiducial f : fiducials) {
+                //     System.out.printf("[%s] Fiducial ID=%d tx=%.2f ty=%.2f ta=%.2f distCam=%.2fm distRobot=%.2fm ambiguity=%.3f%n",
+                //         instance.mapping.limelightTableName, f.id, f.txnc, f.tync, f.ta, f.distToCamera, f.distToRobot, f.ambiguity);
+                // }
             }
         }
     }

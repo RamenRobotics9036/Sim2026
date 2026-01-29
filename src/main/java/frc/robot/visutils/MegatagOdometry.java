@@ -4,14 +4,24 @@ import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import frc.robot.LimelightHelpers;
 import frc.robot.sim.VisionSimInterface;
 
 
 public class MegatagOdometry {
 
+    /**
+     * Creates a MegatagOdometry instance.
+     * @param debugField The Field2d to visualize vision estimates on (can be null)
+     */
+    public MegatagOdometry(Field2d debugField) {
+        this.debugField = debugField;
+    }
+
     private boolean doPoseEstimating = false;
     private VisionSimInterface.EstimateConsumer estConsumer;
+    private final Field2d debugField;
 
     /**
      * Subscribe to pose estimates from this vision system.
@@ -67,6 +77,11 @@ public class MegatagOdometry {
         {
             Matrix<N3, N1> stdDevs = VecBuilder.fill(.5, .5, 9999999);
             estConsumer.accept(mt1.pose, mt1.timestampSeconds, stdDevs);
+
+            // Add this point-in-time vision pose estimate to the debug field
+            if (debugField != null) {
+                debugField.getObject("VisionEstimation").setPose(mt1.pose);
+            }
         }
     }
 

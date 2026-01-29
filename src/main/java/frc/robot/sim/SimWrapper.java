@@ -7,6 +7,7 @@ import com.ctre.phoenix6.swerve.SwerveDrivetrain;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import frc.robot.Robot;
 import frc.robot.generated.TunerConstants;
 
@@ -164,5 +165,14 @@ public class SimWrapper {
      */
     public void cycleResetPosition(Pose2d blueAlliancePose) {
         m_groundTruthSim.cycleResetPosition(blueAlliancePose);
+    }
+
+    /**
+     * Get the simulation debug Field2d for visualization.
+     * @return The VisionSystemSim's debug field, or null if not in simulation
+     */
+    // $TODO - We shouldnt expose this.  Find a better way to visualize sim info.
+    public Field2d getSimDebugField() {
+        return m_visionSim.getSimDebugField();
     }
 }
