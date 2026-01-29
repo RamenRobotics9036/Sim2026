@@ -37,6 +37,7 @@ import static frc.robot.sim.VisionSimConstants.Vision.*;
 
 import java.util.List;
 import java.util.Optional;
+
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
@@ -44,6 +45,10 @@ import org.photonvision.simulation.PhotonCameraSim;
 import org.photonvision.simulation.SimCameraProperties;
 import org.photonvision.simulation.VisionSystemSim;
 import org.photonvision.targeting.PhotonTrackedTarget;
+
+import frc.robot.simphotontolimelight.LimelightData;
+import frc.robot.simphotontolimelight.LimelightTablePublisher;
+import frc.robot.simphotontolimelight.PhotonToLimelightConverter;
 
 public class VisionSim implements VisionSimInterface {
     private final PhotonCamera camera;
@@ -56,6 +61,9 @@ public class VisionSim implements VisionSimInterface {
     private PhotonCameraSim cameraSim;
     private VisionSystemSim visionSystemSim;
 
+    // Limelight NetworkTables publisher
+    private final LimelightTablePublisher limelightPublisher;
+
     public VisionSim() {
 
         // This is good sample code for PhotonVision usage in-general, but we spin this up ONLY for
@@ -67,6 +75,7 @@ public class VisionSim implements VisionSimInterface {
 
         camera = new PhotonCamera(kCameraName);
         photonEstimator = new PhotonPoseEstimator(kTagLayout, kRobotToCam);
+        limelightPublisher = new LimelightTablePublisher("limelight");
 
         // ----- Simulation
         if (Robot.isSimulation()) {
@@ -128,16 +137,17 @@ public class VisionSim implements VisionSimInterface {
             }
             updateEstimationStdDevs(visionEst, result.getTargets());
 
-            if (Robot.isSimulation()) {
-                visionEst.ifPresentOrElse(
-                        est ->
-                                getSimDebugField()
-                                        .getObject("VisionEstimation")
-                                        .setPose(est.estimatedPose.toPose2d()),
-                        () -> {
-                            getSimDebugField().getObject("VisionEstimation").setPoses();
-                        });
-            }
+            // $TODO
+            // if (Robot.isSimulation()) {
+            //     visionEst.ifPresentOrElse(
+            //             est ->
+            //                     getSimDebugField()
+            //                             .getObject("VisionEstimation")
+            //                             .setPose(est.estimatedPose.toPose2d()),
+            //             () -> {
+            //                 getSimDebugField().getObject("VisionEstimation").setPoses();
+            //             });
+            // }
 
             visionEst.ifPresent(
                     est -> {
@@ -145,9 +155,20 @@ public class VisionSim implements VisionSimInterface {
                             // Change our trust in the measurement based on the tags we can see
                             var estStdDevs = getEstimationStdDevs();
 
-                            estConsumer.accept(est.estimatedPose.toPose2d(), est.timestampSeconds, estStdDevs);
+                            //estConsumer.accept(est.estimatedPose.toPose2d(), est.timestampSeconds, estStdDevs);
                         }
                     });
+
+            // Publish to Limelight NetworkTables for MegatagOdometry to consume
+            LimelightData data = PhotonToLimelightConverter.convertPipelineResult(result, kRobotToCam);
+            double totalLatencyMs = data.pipelineLatencyMs + data.captureLatencyMs;
+            PhotonToLimelightConverter.convertBotpose(
+                visionEst.map(est -> est.estimatedPose).orElse(null),
+                result.getTargets(),
+                kRobotToCam,
+                totalLatencyMs,
+                data);
+            limelightPublisher.publish(data);
         }
     }
 

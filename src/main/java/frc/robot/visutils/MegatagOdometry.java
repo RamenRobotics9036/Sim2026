@@ -90,12 +90,12 @@ public class MegatagOdometry {
         System.out.printf("MegatagOdometry: Adding vision measurement with %d tags, stdDevs=(%.2f, %.2f, %.2f)%n",
             mt1.tagCount, curStdDevs.get(0, 0), curStdDevs.get(1, 0), curStdDevs.get(2, 0));
 
-        //estConsumer.accept(mt1.pose, mt1.timestampSeconds, curStdDevs);
+        estConsumer.accept(mt1.pose, mt1.timestampSeconds, curStdDevs);
 
         // Add this point-in-time vision pose estimate to the debug field
-        //if (debugField != null) {
-        //    debugField.getObject("VisionEstimation").setPose(mt1.pose);
-        //}
+        if (debugField != null) {
+            debugField.getObject("VisionEstimation").setPose(mt1.pose);
+        }
     }
 
     // $TODO - Add this back
