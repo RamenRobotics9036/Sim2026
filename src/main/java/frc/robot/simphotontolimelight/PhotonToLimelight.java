@@ -2,11 +2,9 @@ package frc.robot.simphotontolimelight;
 
 import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
-import org.photonvision.PhotonPoseEstimator.PoseStrategy;
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.targeting.PhotonPipelineResult;
 import edu.wpi.first.math.geometry.Pose3d;
-import frc.robot.LimelightHelpers;
 import frc.robot.Robot;
 import frc.robot.sim.VisionSimConstants;
 import java.util.ArrayList;
@@ -31,9 +29,7 @@ public class PhotonToLimelight {
             this.publisher = new LimelightTablePublisher(mapping.limelightTableName);
             this.poseEstimator = new PhotonPoseEstimator(
                 VisionSimConstants.Vision.kTagLayout,
-                PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
                 mapping.robotToCamera);
-            this.poseEstimator.setMultiTagFallbackStrategy(PoseStrategy.LOWEST_AMBIGUITY);
         }
     }
 
@@ -69,8 +65,12 @@ public class PhotonToLimelight {
                 LimelightData data = PhotonToLimelightConverter.convertPipelineResult(
                     result, instance.mapping.robotToCamera);
 
-                // Estimate robot pose and convert to botpose format
-                Optional<EstimatedRobotPose> estimatedPose = instance.poseEstimator.update(result);
+                // Estimate robot pose using multi-tag first, then lowest ambiguity fallback
+                Optional<EstimatedRobotPose> estimatedPose = instance.poseEstimator.estimateCoprocMultiTagPose(result);
+                if (estimatedPose.isEmpty()) {
+                    estimatedPose = instance.poseEstimator.estimateLowestAmbiguityPose(result);
+                }
+
                 Pose3d robotPose = estimatedPose.map(est -> est.estimatedPose).orElse(null);
                 double totalLatencyMs = data.pipelineLatencyMs + data.captureLatencyMs;
 
