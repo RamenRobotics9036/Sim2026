@@ -72,14 +72,14 @@ public class SimWrapper {
         }
     }
 
-    public void optionalSubscribeToPoseEstimates(
+    public void subscribeToPhotonVisionPoseEstimates(
             VisionSimInterface.EstimateConsumer consumer) {
 
         if (consumer == null) {
             throw new IllegalArgumentException("Vision pose consumer cannot be null");
         }
 
-        m_visionSim.subscribePoseEstimates(consumer);
+        m_visionSim.subscribeToPhotonVisionPoseEstimates(consumer);
     }
 
     /**

@@ -34,7 +34,7 @@ public class Robot extends TimedRobot {
             m_robotContainer.m_simWrapper.robotPeriodic();
         }
 
-        m_robotContainer.m_megatagOdometry.periodic();
+        m_robotContainer.m_limelightOdometry.periodic();
 
         m_timeAndJoystickReplay.update();
         CommandScheduler.getInstance().run();

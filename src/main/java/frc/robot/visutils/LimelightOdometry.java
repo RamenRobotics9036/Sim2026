@@ -7,19 +7,13 @@ import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import frc.robot.LimelightHelpers;
 import frc.robot.sim.visionproducers.VisionSimInterface;
-
 import static frc.robot.sim.visionproducers.VisionSimConstants.Vision.*;
 
-import java.util.concurrent.ExecutionException;
 
+public class LimelightOdometry {
 
-public class MegatagOdometry {
-
-    /**
-     * Creates a MegatagOdometry instance.
-     * @param debugField The Field2d to visualize vision estimates on (can be null)
-     */
-    public MegatagOdometry(Field2d debugField) {
+    /** Constructor */
+    public LimelightOdometry(Field2d debugField) {
         this.debugField = debugField;
     }
 
@@ -41,7 +35,7 @@ public class MegatagOdometry {
         doPoseEstimating = true;
 
         System.out.println("---------------------------------------------------");
-        System.out.println("MegatagOdometry: Limelight for pose estimates");
+        System.out.println("Limelight pose estimates subscribed\"");
         System.out.println("---------------------------------------------------");
     }
 
@@ -87,7 +81,7 @@ public class MegatagOdometry {
         }
 
         // Print # of tags matching AND the stddevs values
-        System.out.printf("MegatagOdometry: Adding vision measurement with %d tags, stdDevs=(%.2f, %.2f, %.2f)%n",
+        System.out.printf("LimelightOdometry: Adding vision measurement with %d tags, stdDevs=(%.2f, %.2f, %.2f)%n",
             mt1.tagCount, curStdDevs.get(0, 0), curStdDevs.get(1, 0), curStdDevs.get(2, 0));
 
         estConsumer.accept(mt1.pose, mt1.timestampSeconds, curStdDevs);
@@ -97,28 +91,6 @@ public class MegatagOdometry {
             debugField.getObject("VisionEstimation").setPose(mt1.pose);
         }
     }
-
-    // $TODO - Add this back
-    // private void addVisionMeasurementV2() {
-    //     boolean doRejectUpdate = false;
-    //     LimelightHelpers.SetRobotOrientation("limelight", m_poseEstimator.getEstimatedPosition().getRotation().getDegrees(), 0, 0, 0, 0, 0);
-    //     LimelightHelpers.PoseEstimate mt2 = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2("limelight");
-    //     if(Math.abs(m_gyro.getRate()) > 720) // if our angular velocity is greater than 720 degrees per second, ignore vision updates
-    //     {
-    //         doRejectUpdate = true;
-    //     }
-    //     if(mt2.tagCount == 0)
-    //     {
-    //         doRejectUpdate = true;
-    //     }
-    //     if(!doRejectUpdate)
-    //     {
-    //         m_poseEstimator.setVisionMeasurementStdDevs(VecBuilder.fill(.7,.7,9999999));
-    //         m_poseEstimator.addVisionMeasurement(
-    //             mt2.pose,
-    //             mt2.timestampSeconds);
-    //     }
-    // }
 
     /**
      * Calculates new standard deviations. This algorithm is a heuristic that creates dynamic standard

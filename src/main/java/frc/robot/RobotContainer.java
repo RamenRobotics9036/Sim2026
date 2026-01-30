@@ -27,7 +27,7 @@ import frc.robot.generated.TunerConstants;
 import frc.robot.sim.JoystickInputsRecord;
 import frc.robot.sim.SimWrapper;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
-import frc.robot.visutils.MegatagOdometry;
+import frc.robot.visutils.LimelightOdometry;
 
 public class RobotContainer {
     private double MaxSpeed = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
@@ -57,7 +57,7 @@ public class RobotContainer {
     /** Simulation wrapper - null when not in simulation */
     public final SimWrapper m_simWrapper;
 
-    public final MegatagOdometry m_megatagOdometry;
+    public final LimelightOdometry m_limelightOdometry;
 
     public RobotContainer() {
        autoChooser = AutoBuilder.buildAutoChooser("Tests");
@@ -82,8 +82,8 @@ public class RobotContainer {
         // $TODO - I dont like how we expose debugfield
         Field2d visionDebugField = (m_simWrapper != null) ? m_simWrapper.getSimDebugField() : null;
 
-        m_megatagOdometry = new MegatagOdometry(visionDebugField);
-        m_megatagOdometry.subscribePoseEstimates(drivetrain::addVisionMeasurement);
+        m_limelightOdometry = new LimelightOdometry(visionDebugField);
+        m_limelightOdometry.subscribePoseEstimates(drivetrain::addVisionMeasurement);
 
         // Warmup PathPlanner to avoid Java pauses
         FollowPathCommand.warmupCommand().schedule();

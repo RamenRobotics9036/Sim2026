@@ -105,11 +105,11 @@ public class VisionSim implements VisionSimInterface {
      *     {@link edu.wpi.first.math.estimator.SwerveDrivePoseEstimator}
      */
     @Override
-    public void subscribePoseEstimates(VisionSimInterface.EstimateConsumer consumer) {
+    public void subscribeToPhotonVisionPoseEstimates(VisionSimInterface.EstimateConsumer consumer) {
         this.estConsumer = consumer;
 
         System.out.println("---------------------------------------------------");
-        System.out.println("VisionSim: Enabled demo for pose estimates");
+        System.out.println("PhotonVision pose estimates subscribed");
         System.out.println("---------------------------------------------------");
     }
 
@@ -150,7 +150,7 @@ public class VisionSim implements VisionSimInterface {
                         }
                     });
 
-            // Publish to Limelight NetworkTables for MegatagOdometry to consume
+            // Publish to Limelight NetworkTables for LimelightOdometry to consume
             LimelightData data = PhotonToLimelightConverter.convertPipelineResult(result, kRobotToCam);
             double totalLatencyMs = data.pipelineLatencyMs + data.captureLatencyMs;
             PhotonToLimelightConverter.convertBotpose(
