@@ -83,7 +83,8 @@ public class LimelightOdometry {
 
         // Add this point-in-time vision pose estimate to the debug field
         if (debugField != null) {
-            debugField.getObject("VisionEstimation").setPose(mt1.pose);
+            //$TODO - I disabled this here since we print it in VisionSim
+            //debugField.getObject("VisionEstimation").setPose(mt1.pose);
         }
     }
 

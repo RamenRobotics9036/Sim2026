@@ -1,5 +1,7 @@
 package frc.robot.sim.visionproducers;
 
+import java.util.Optional;
+
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.numbers.N1;
@@ -51,4 +53,9 @@ public interface VisionSimInterface {
      * @return The debug Field2d, or null if not in simulation
      */
     Field2d getSimDebugField();
+
+    /**
+     * Get the latest point in time vision pose estimate.
+     */
+    Optional<Pose2d> getLatestVisPose();
 }

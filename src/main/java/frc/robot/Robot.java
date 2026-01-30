@@ -4,8 +4,11 @@
 
 package frc.robot;
 
+import java.util.Optional;
+
 import com.ctre.phoenix6.HootAutoReplay;
 
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
@@ -26,15 +29,30 @@ public class Robot extends TimedRobot {
 
     @Override
     public void robotPeriodic() {
+        Optional<Pose2d> showVisPose = Optional.empty();
+
         // $TODO - Wrapper for sim features
         if (Robot.isSimulation() && m_robotContainer.m_simWrapper != null) {
             // NOTE: We run the vision period FIRST in robotPeriodic, since it updates
             // NetworkTables with the limelight data, in-case any code in this loop
             // needs that info and doesnt want it delayed 20ms.
             m_robotContainer.m_simWrapper.robotPeriodic();
+            showVisPose = m_robotContainer.m_simWrapper.getLatestVisPose();
         }
 
         m_robotContainer.m_limelightOdometry.periodic();
+
+        if (Robot.isSimulation()) {
+            // $TODO - All Field2d updates should be consolidated in one place
+            showVisPose.ifPresentOrElse(
+                est ->
+                    m_robotContainer.m_simWrapper.getSimDebugField()
+                        .getObject("VisionEstimation")
+                        .setPose(est),
+                () -> {
+                    m_robotContainer.m_simWrapper.getSimDebugField().getObject("VisionEstimation").setPoses();
+                });
+        }
 
         m_timeAndJoystickReplay.update();
         CommandScheduler.getInstance().run();

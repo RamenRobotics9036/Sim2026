@@ -13,6 +13,7 @@ import frc.robot.generated.TunerConstants;
 import frc.robot.sim.visionproducers.VisionSimFactory;
 import frc.robot.sim.visionproducers.VisionSimInterface;
 
+import java.util.Optional;
 import java.util.function.Consumer;
 
 /**
@@ -105,6 +106,7 @@ public class SimWrapper {
         Pose2d groundTruthPose = m_groundTruthSim.getGroundTruthPose();
         m_visionSim.simulationPeriodic(groundTruthPose);
 
+        // $TODO - Fix this here
         // Debug field visualization
         var debugField = m_visionSim.getSimDebugField();
         if (debugField != null) {
@@ -176,5 +178,12 @@ public class SimWrapper {
     // $TODO - We shouldnt expose this.  Find a better way to visualize sim info.
     public Field2d getSimDebugField() {
         return m_visionSim.getSimDebugField();
+    }
+
+    /**
+     * Get the latest point in time vision pose estimate.
+     */
+    public Optional<Pose2d> getLatestVisPose() {
+        return m_visionSim.getLatestVisPose();
     }
 }

@@ -51,7 +51,9 @@ public class VisionSim implements VisionSimInterface {
     private final PhotonCamera camera;
     private final PhotonPoseEstimator photonEstimator;
     private Matrix<N3, N1> curStdDevs;
+
     private VisionSimInterface.EstimateConsumer estConsumer;
+    private Optional<Pose2d> latestVisPose = Optional.empty();
 
     // Simulation
     private PhotonCameraSim cameraSim;
@@ -128,17 +130,8 @@ public class VisionSim implements VisionSimInterface {
             }
             updateEstimationStdDevs(visionEst, result.getTargets());
 
-            // $TODO
-            // if (Robot.isSimulation()) {
-            //     visionEst.ifPresentOrElse(
-            //             est ->
-            //                     getSimDebugField()
-            //                             .getObject("VisionEstimation")
-            //                             .setPose(est.estimatedPose.toPose2d()),
-            //             () -> {
-            //                 getSimDebugField().getObject("VisionEstimation").setPoses();
-            //             });
-            // }
+            // Save the latest vision estimate so that it can be queried
+            latestVisPose = visionEst.map(est -> est.estimatedPose.toPose2d());
 
             visionEst.ifPresent(
                     est -> {
@@ -238,7 +231,19 @@ public class VisionSim implements VisionSimInterface {
     /** A Field2d for visualizing our robot and objects on the field. */
     @Override
     public Field2d getSimDebugField() {
-        if (!Robot.isSimulation()) return null;
+        if (!Robot.isSimulation()) {
+            throw new IllegalStateException(
+                "getSimDebugField should only be called in simulation");
+        }
         return visionSystemSim.getDebugField();
+    }
+
+    @Override
+    public Optional<Pose2d> getLatestVisPose() {
+         if (!Robot.isSimulation()) {
+            throw new IllegalStateException(
+                "getLatestVisPose should only be called in simulation");
+        }
+        return latestVisPose;
     }
 }
