@@ -178,7 +178,6 @@ public class SimWrapper {
      * Get the simulation debug Field2d for visualization.
      * @return The VisionSystemSim's debug field, or null if not in simulation
      */
-    // $TODO - We shouldnt expose this.  Find a better way to visualize sim info.
     public Field2d getSimDebugField() {
         return m_visionSim.getSimDebugField();
     }
