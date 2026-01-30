@@ -2,15 +2,18 @@ package frc.robot.visutils;
 
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import frc.robot.LimelightHelpers;
+import java.util.Optional;
 import frc.robot.sim.visionproducers.VisionSimInterface;
 import static frc.robot.sim.visionproducers.VisionSimConstants.Vision.*;
 
 
 public class LimelightOdometry {
+    private Optional<Pose2d> latestVisPose = Optional.empty();
 
     /** Constructor */
     public LimelightOdometry(Field2d debugField) {
@@ -18,7 +21,7 @@ public class LimelightOdometry {
     }
 
     private VisionSimInterface.EstimateConsumer estConsumer;
-    private final Field2d debugField;
+    private final Field2d debugField; // $TODO - This should go away
     private Matrix<N3, N1> curStdDevs = kSingleTagStdDevs;
     private double lastTimestamp = 0;
 
@@ -41,6 +44,9 @@ public class LimelightOdometry {
 
     private void addVisionMeasurementV1() {
         LimelightHelpers.PoseEstimate mt1 = LimelightHelpers.getBotPoseEstimate_wpiBlue("limelight");
+
+        // Save the latest vision estimate so that it can be queried
+        latestVisPose = Optional.ofNullable(mt1).map(est -> est.pose);
 
         if (mt1 == null) {
             // In simulation, limelight may not be present until a few cycles of periodic, since we
@@ -120,5 +126,9 @@ public class LimelightOdometry {
         }
 
         curStdDevs = estStdDevs;
+    }
+
+    public Optional<Pose2d> getLatestVisPose() {
+        return latestVisPose;
     }
 }
