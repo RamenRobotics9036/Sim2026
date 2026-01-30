@@ -17,7 +17,6 @@ public class LimelightOdometry {
         this.debugField = debugField;
     }
 
-    private boolean doPoseEstimating = false;
     private VisionSimInterface.EstimateConsumer estConsumer;
     private final Field2d debugField;
     private Matrix<N3, N1> curStdDevs = kSingleTagStdDevs;
@@ -31,19 +30,13 @@ public class LimelightOdometry {
     public void subscribePoseEstimates(VisionSimInterface.EstimateConsumer consumer) {
         this.estConsumer = consumer;
 
-        // Someone is subscribed to pose estimates - so lets start generating them
-        doPoseEstimating = true;
-
         System.out.println("---------------------------------------------------");
         System.out.println("Limelight pose estimates subscribed\"");
         System.out.println("---------------------------------------------------");
     }
 
     public void periodic() {
-
-        if (doPoseEstimating) {
-            addVisionMeasurementV1();
-        }
+        addVisionMeasurementV1();
     }
 
     private void addVisionMeasurementV1() {
@@ -84,7 +77,9 @@ public class LimelightOdometry {
         System.out.printf("LimelightOdometry: Adding vision measurement with %d tags, stdDevs=(%.2f, %.2f, %.2f)%n",
             mt1.tagCount, curStdDevs.get(0, 0), curStdDevs.get(1, 0), curStdDevs.get(2, 0));
 
-        estConsumer.accept(mt1.pose, mt1.timestampSeconds, curStdDevs);
+        if (estConsumer != null) {
+            estConsumer.accept(mt1.pose, mt1.timestampSeconds, curStdDevs);
+        }
 
         // Add this point-in-time vision pose estimate to the debug field
         if (debugField != null) {
