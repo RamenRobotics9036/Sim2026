@@ -39,6 +39,7 @@ public class SimWrapper {
     private final SwerveDrivetrain<TalonFX, TalonFX, CANcoder> m_drivetrain;
     private final GroundTruthSimInterface m_groundTruthSim;
     private final VisionSimInterface m_visionSim;
+    private final boolean m_addLimelightNetworkTables;
 
     /**
      * Creates a new SimWrapper.
@@ -71,6 +72,7 @@ public class SimWrapper {
         }
 
         m_drivetrain = drivetrain;
+        m_addLimelightNetworkTables = addLimelightNetworkTables;
 
         // Create ground truth simulation
         m_groundTruthSim = GroundTruthSimFactory.create(drivetrain, poseResetConsumer);
@@ -187,5 +189,19 @@ public class SimWrapper {
      */
     public Optional<Pose2d> getLatestVisPose() {
         return m_visionSim.getLatestVisPose();
+    }
+
+    /**
+     * Determines if vision measurements should come from LimelightOdometry.
+     * In simulation, returns true only if Limelight NetworkTables are enabled.
+     *
+     * @return true if vision measurements should come from LimelightOdometry
+     */
+    public boolean isVisionMeasurementFromLimelight() {
+        if (!Robot.isSimulation()) {
+            return true;
+        }
+
+        return m_addLimelightNetworkTables;
     }
 }

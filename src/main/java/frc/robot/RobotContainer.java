@@ -34,7 +34,7 @@ public class RobotContainer {
     private double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second max angular velocity
 
     // Configuration for vision
-    private final boolean m_addLimelightNetworkTablesInSim = false;
+    private final boolean m_addLimelightNetworkTablesInSim = true;
 
     /* Setting up bindings for necessary control of the swerve drive platform */
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
@@ -82,11 +82,8 @@ public class RobotContainer {
 
         // When the robot is NOT in simulation, we always get the vision measurements from LimelightOdometry.
         // If in simulation, it depends on m_addLimelightNetworkTablesInSim.
-        boolean getVisionMeasurementFromLimelight = !Robot.isSimulation() ||
-            m_addLimelightNetworkTablesInSim;
-
         m_limelightOdometry = new LimelightOdometry();
-        if (getVisionMeasurementFromLimelight) {
+        if (m_simWrapper == null || m_simWrapper.isVisionMeasurementFromLimelight()) {
             m_limelightOdometry.subscribePoseEstimates(drivetrain::addVisionMeasurement);
         }
 
