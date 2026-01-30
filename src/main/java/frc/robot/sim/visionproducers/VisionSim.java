@@ -51,7 +51,6 @@ public class VisionSim implements VisionSimInterface {
     private final PhotonCamera camera;
     private final PhotonPoseEstimator photonEstimator;
     private Matrix<N3, N1> curStdDevs;
-    private boolean doPoseEstimating = false;
     private VisionSimInterface.EstimateConsumer estConsumer;
 
     // Simulation
@@ -109,9 +108,6 @@ public class VisionSim implements VisionSimInterface {
     public void subscribePoseEstimates(VisionSimInterface.EstimateConsumer consumer) {
         this.estConsumer = consumer;
 
-        // Someone is subscribed to pose estimates - so lets start generating them
-        doPoseEstimating = true;
-
         System.out.println("---------------------------------------------------");
         System.out.println("VisionSim: Enabled demo for pose estimates");
         System.out.println("---------------------------------------------------");
@@ -120,9 +116,7 @@ public class VisionSim implements VisionSimInterface {
     @Override
     public void periodic() {
         // We only do pose estimation if someone is subscribed
-        if (doPoseEstimating) {
-            generatePoseEstimate();
-        }
+        generatePoseEstimate();
     }
 
     private void generatePoseEstimate() {
@@ -152,7 +146,7 @@ public class VisionSim implements VisionSimInterface {
                             // Change our trust in the measurement based on the tags we can see
                             var estStdDevs = getEstimationStdDevs();
 
-                            //estConsumer.accept(est.estimatedPose.toPose2d(), est.timestampSeconds, estStdDevs);
+                            estConsumer.accept(est.estimatedPose.toPose2d(), est.timestampSeconds, estStdDevs);
                         }
                     });
 

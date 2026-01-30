@@ -72,7 +72,8 @@ public class RobotContainer {
                 this::resetRobotPose);
 
             // If we have our own pose generator, we can turn off this optional demo
-            m_simWrapper.optionalSubscribeToPoseEstimates(drivetrain::addVisionMeasurement);
+            // $TODO
+            //m_simWrapper.optionalSubscribeToPoseEstimates(drivetrain::addVisionMeasurement);
         }
         else {
             m_simWrapper = null;
