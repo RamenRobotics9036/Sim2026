@@ -79,12 +79,7 @@ public class RobotContainer {
             m_simWrapper = null;
         }
 
-        // $TODO - I dont like how we expose debugfield
-        Field2d visionDebugField = (m_simWrapper != null) ? m_simWrapper.getSimDebugField() : null;
-
-        // $TODO - I dont like how we pass visionDebugField to LimelightOdometry.  Instead, we should
-        // get the vision pose estimate and show it on debug field HERE.
-        m_limelightOdometry = new LimelightOdometry(visionDebugField);
+        m_limelightOdometry = new LimelightOdometry();
         m_limelightOdometry.subscribePoseEstimates(drivetrain::addVisionMeasurement);
 
         // Warmup PathPlanner to avoid Java pauses

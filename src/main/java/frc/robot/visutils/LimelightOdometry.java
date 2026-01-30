@@ -13,17 +13,15 @@ import static frc.robot.sim.visionproducers.VisionSimConstants.Vision.*;
 
 
 public class LimelightOdometry {
+    private VisionSimInterface.EstimateConsumer estConsumer;
+    private Matrix<N3, N1> curStdDevs = kSingleTagStdDevs;
+    private double lastTimestamp = 0;
+
     private Optional<Pose2d> latestVisPose = Optional.empty();
 
     /** Constructor */
-    public LimelightOdometry(Field2d debugField) {
-        this.debugField = debugField;
+    public LimelightOdometry() {
     }
-
-    private VisionSimInterface.EstimateConsumer estConsumer;
-    private final Field2d debugField; // $TODO - This should go away
-    private Matrix<N3, N1> curStdDevs = kSingleTagStdDevs;
-    private double lastTimestamp = 0;
 
     /**
      * Subscribe to pose estimates from this vision system.
@@ -85,12 +83,6 @@ public class LimelightOdometry {
 
         if (estConsumer != null) {
             estConsumer.accept(mt1.pose, mt1.timestampSeconds, curStdDevs);
-        }
-
-        // Add this point-in-time vision pose estimate to the debug field
-        if (debugField != null) {
-            //$TODO - I disabled this here since we print it in VisionSim
-            //debugField.getObject("VisionEstimation").setPose(mt1.pose);
         }
     }
 

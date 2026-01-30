@@ -37,7 +37,9 @@ public class Robot extends TimedRobot {
             // NetworkTables with the limelight data, in-case any code in this loop
             // needs that info and doesnt want it delayed 20ms.
             m_robotContainer.m_simWrapper.robotPeriodic();
-            showVisPose = m_robotContainer.m_simWrapper.getLatestVisPose();
+            // $TODO - Make this configureable
+            //showVisPose = m_robotContainer.m_simWrapper.getLatestVisPose();
+            showVisPose = m_robotContainer.m_limelightOdometry.getLatestVisPose();
         }
 
         m_robotContainer.m_limelightOdometry.periodic();
