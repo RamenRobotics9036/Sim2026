@@ -2,25 +2,26 @@ package frc.robot.visutils;
 
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import frc.robot.LimelightHelpers;
+import java.util.Optional;
 import frc.robot.sim.visionproducers.VisionSimInterface;
 import static frc.robot.sim.visionproducers.VisionSimConstants.Vision.*;
 
 
 public class LimelightOdometry {
-
-    /** Constructor */
-    public LimelightOdometry(Field2d debugField) {
-        this.debugField = debugField;
-    }
-
     private VisionSimInterface.EstimateConsumer estConsumer;
-    private final Field2d debugField;
     private Matrix<N3, N1> curStdDevs = kSingleTagStdDevs;
     private double lastTimestamp = 0;
+
+    private Optional<Pose2d> latestVisPose = Optional.empty();
+
+    /** Constructor */
+    public LimelightOdometry() {
+    }
 
     /**
      * Subscribe to pose estimates from this vision system.
@@ -41,6 +42,9 @@ public class LimelightOdometry {
 
     private void addVisionMeasurementV1() {
         LimelightHelpers.PoseEstimate mt1 = LimelightHelpers.getBotPoseEstimate_wpiBlue("limelight");
+
+        // Save the latest vision estimate so that it can be queried
+        latestVisPose = Optional.ofNullable(mt1).map(est -> est.pose);
 
         if (mt1 == null) {
             // In simulation, limelight may not be present until a few cycles of periodic, since we
@@ -80,12 +84,6 @@ public class LimelightOdometry {
         if (estConsumer != null) {
             estConsumer.accept(mt1.pose, mt1.timestampSeconds, curStdDevs);
         }
-
-        // Add this point-in-time vision pose estimate to the debug field
-        if (debugField != null) {
-            //$TODO - I disabled this here since we print it in VisionSim
-            //debugField.getObject("VisionEstimation").setPose(mt1.pose);
-        }
     }
 
     /**
@@ -120,5 +118,9 @@ public class LimelightOdometry {
         }
 
         curStdDevs = estStdDevs;
+    }
+
+    public Optional<Pose2d> getLatestVisPose() {
+        return latestVisPose;
     }
 }

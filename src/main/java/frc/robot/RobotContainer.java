@@ -33,6 +33,9 @@ public class RobotContainer {
     private double MaxSpeed = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
     private double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second max angular velocity
 
+    // Configuration for vision
+    private final boolean m_addLimelightNetworkTablesInSim = true;
+
     /* Setting up bindings for necessary control of the swerve drive platform */
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
             .withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.1) // Add a 10% deadband
@@ -69,23 +72,20 @@ public class RobotContainer {
         if (Robot.isSimulation()) {
             m_simWrapper = new SimWrapper(
                 drivetrain,
+                m_addLimelightNetworkTablesInSim,
+                m_addLimelightNetworkTablesInSim ? null : drivetrain::addVisionMeasurement,
                 this::resetRobotPose);
-
-            // If we have our own pose generator, we can turn off this optional demo
-            // $TODO
-            //m_simWrapper.optionalSubscribeToPoseEstimates(drivetrain::addVisionMeasurement);
         }
         else {
             m_simWrapper = null;
         }
 
-        // $TODO - I dont like how we expose debugfield
-        Field2d visionDebugField = (m_simWrapper != null) ? m_simWrapper.getSimDebugField() : null;
-
-        // $TODO - I dont like how we pass visionDebugField to LimelightOdometry.  Instead, we should
-        // get the vision pose estimate and show it on debug field HERE.
-        m_limelightOdometry = new LimelightOdometry(visionDebugField);
-        m_limelightOdometry.subscribePoseEstimates(drivetrain::addVisionMeasurement);
+        // When the robot is NOT in simulation, we always get the vision measurements from LimelightOdometry.
+        // If in simulation, it depends on m_addLimelightNetworkTablesInSim.
+        m_limelightOdometry = new LimelightOdometry();
+        if (m_simWrapper == null || m_simWrapper.isVisionMeasurementFromLimelight()) {
+            m_limelightOdometry.subscribePoseEstimates(drivetrain::addVisionMeasurement);
+        }
 
         // Warmup PathPlanner to avoid Java pauses
         FollowPathCommand.warmupCommand().schedule();

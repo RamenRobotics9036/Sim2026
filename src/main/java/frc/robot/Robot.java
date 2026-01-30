@@ -37,18 +37,23 @@ public class Robot extends TimedRobot {
             // NetworkTables with the limelight data, in-case any code in this loop
             // needs that info and doesnt want it delayed 20ms.
             m_robotContainer.m_simWrapper.robotPeriodic();
-            showVisPose = m_robotContainer.m_simWrapper.getLatestVisPose();
         }
 
         m_robotContainer.m_limelightOdometry.periodic();
 
+        // Do we get vision poses from PhotonVision or LimelightOdometry?
+        if (m_robotContainer.m_simWrapper == null || m_robotContainer.m_simWrapper.isVisionMeasurementFromLimelight()) {
+            showVisPose = m_robotContainer.m_limelightOdometry.getLatestVisPose();
+        } else {
+            showVisPose = m_robotContainer.m_simWrapper.getLatestVisPose();
+        }
+
         if (Robot.isSimulation()) {
-            // $TODO - All Field2d updates should be consolidated in one place
             showVisPose.ifPresentOrElse(
-                est ->
+                curpose ->
                     m_robotContainer.m_simWrapper.getSimDebugField()
                         .getObject("VisionEstimation")
-                        .setPose(est),
+                        .setPose(curpose),
                 () -> {
                     m_robotContainer.m_simWrapper.getSimDebugField().getObject("VisionEstimation").setPoses();
                 });
