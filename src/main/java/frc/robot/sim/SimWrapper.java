@@ -49,6 +49,8 @@ public class SimWrapper {
      */
     public SimWrapper(
             SwerveDrivetrain<TalonFX, TalonFX, CANcoder> drivetrain,
+            boolean addLimelightNetworkTables,
+            VisionSimInterface.EstimateConsumer photonVisionPoseConsumer,
             Consumer<Pose2d> poseResetConsumer) {
 
         if (!Robot.isSimulation()) {
@@ -61,26 +63,27 @@ public class SimWrapper {
             throw new IllegalArgumentException("Pose reset consumer cannot be null");
         }
 
+        // If we are adding Limelight NetworkTables, the caller should always get vision pose
+        // consumer using LimelightOdometry, not request it here.
+        if (addLimelightNetworkTables && photonVisionPoseConsumer != null) {
+            throw new IllegalArgumentException(
+                "Cannot add Limelight NetworkTables and request vision pose consumer simultaneously");
+        }
+
         m_drivetrain = drivetrain;
 
         // Create ground truth simulation
         m_groundTruthSim = GroundTruthSimFactory.create(drivetrain, poseResetConsumer);
 
         // Create vision simulation
-        m_visionSim = VisionSimFactory.create();
+        m_visionSim = VisionSimFactory.create(addLimelightNetworkTables);
         if (m_visionSim == null) {
             throw new IllegalStateException("VisionSimInterface creation failed");
         }
-    }
 
-    public void subscribeToPhotonVisionPoseEstimates(
-            VisionSimInterface.EstimateConsumer consumer) {
-
-        if (consumer == null) {
-            throw new IllegalArgumentException("Vision pose consumer cannot be null");
+        if (photonVisionPoseConsumer != null) {
+            m_visionSim.subscribeToPhotonVisionPoseEstimates(photonVisionPoseConsumer);
         }
-
-        m_visionSim.subscribeToPhotonVisionPoseEstimates(consumer);
     }
 
     /**

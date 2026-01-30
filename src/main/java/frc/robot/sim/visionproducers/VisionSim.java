@@ -32,7 +32,6 @@ import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import frc.robot.Robot;
-import frc.robot.sim.visionproducers.VisionSimInterface.EstimateConsumer;
 
 import static frc.robot.sim.visionproducers.VisionSimConstants.Vision.*;
 
@@ -54,6 +53,7 @@ public class VisionSim implements VisionSimInterface {
 
     private VisionSimInterface.EstimateConsumer estConsumer;
     private Optional<Pose2d> latestVisPose = Optional.empty();
+    private final boolean m_addLimelightNetworkTables;
 
     // Simulation
     private PhotonCameraSim cameraSim;
@@ -62,7 +62,7 @@ public class VisionSim implements VisionSimInterface {
     // Limelight NetworkTables publisher
     private final LimelightTablePublisher limelightPublisher;
 
-    public VisionSim() {
+    public VisionSim(boolean addLimelightNetworkTables) {
 
         // This is good sample code for PhotonVision usage in-general, but we spin this up ONLY for
         // simulation.  You'll need a separate implementation for real robot vision processing.
@@ -73,7 +73,12 @@ public class VisionSim implements VisionSimInterface {
 
         camera = new PhotonCamera(kCameraName);
         photonEstimator = new PhotonPoseEstimator(kTagLayout, kRobotToCam);
-        limelightPublisher = new LimelightTablePublisher("limelight");
+        m_addLimelightNetworkTables = addLimelightNetworkTables;
+        if (addLimelightNetworkTables) {
+            limelightPublisher = new LimelightTablePublisher("limelight");
+        } else {
+            limelightPublisher = null;
+        }
 
         // ----- Simulation
         if (Robot.isSimulation()) {
@@ -143,16 +148,18 @@ public class VisionSim implements VisionSimInterface {
                         }
                     });
 
-            // Publish to Limelight NetworkTables for LimelightOdometry to consume
-            LimelightData data = PhotonToLimelightConverter.convertPipelineResult(result, kRobotToCam);
-            double totalLatencyMs = data.pipelineLatencyMs + data.captureLatencyMs;
-            PhotonToLimelightConverter.convertBotpose(
-                visionEst.map(est -> est.estimatedPose).orElse(null),
-                result.getTargets(),
-                kRobotToCam,
-                totalLatencyMs,
-                data);
-            limelightPublisher.publish(data);
+            if (m_addLimelightNetworkTables) {
+                // Publish to Limelight NetworkTables for LimelightOdometry to consume
+                LimelightData data = PhotonToLimelightConverter.convertPipelineResult(result, kRobotToCam);
+                double totalLatencyMs = data.pipelineLatencyMs + data.captureLatencyMs;
+                PhotonToLimelightConverter.convertBotpose(
+                    visionEst.map(est -> est.estimatedPose).orElse(null),
+                    result.getTargets(),
+                    kRobotToCam,
+                    totalLatencyMs,
+                    data);
+                limelightPublisher.publish(data);
+            }
         }
     }
 
