@@ -51,10 +51,6 @@ public class VisionSim implements VisionSimInterface {
     private final PhotonPoseEstimator photonEstimator;
     private Matrix<N3, N1> curStdDevs;
 
-    private VisionSimInterface.EstimateConsumer estConsumer;
-    private Optional<Pose2d> latestVisPose = Optional.empty();
-    private final boolean m_addLimelightNetworkTables;
-
     // Simulation
     private PhotonCameraSim cameraSim;
     private VisionSystemSim visionSystemSim;
@@ -62,7 +58,7 @@ public class VisionSim implements VisionSimInterface {
     // Limelight NetworkTables publisher
     private final LimelightTablePublisher limelightPublisher;
 
-    public VisionSim(boolean addLimelightNetworkTables) {
+    public VisionSim() {
 
         // This is good sample code for PhotonVision usage in-general, but we spin this up ONLY for
         // simulation.  You'll need a separate implementation for real robot vision processing.
@@ -73,12 +69,7 @@ public class VisionSim implements VisionSimInterface {
 
         camera = new PhotonCamera(kCameraName);
         photonEstimator = new PhotonPoseEstimator(kTagLayout, kRobotToCam);
-        m_addLimelightNetworkTables = addLimelightNetworkTables;
-        if (addLimelightNetworkTables) {
-            limelightPublisher = new LimelightTablePublisher("limelight");
-        } else {
-            limelightPublisher = null;
-        }
+        limelightPublisher = new LimelightTablePublisher("limelight");
 
         // ----- Simulation
         if (Robot.isSimulation()) {
@@ -106,20 +97,6 @@ public class VisionSim implements VisionSimInterface {
         }
     }
 
-    /**
-     * Subscribe to pose estimates from this vision system.
-     * @param consumer Lambda that will accept a pose estimate and pass it to your desired
-     *     {@link edu.wpi.first.math.estimator.SwerveDrivePoseEstimator}
-     */
-    @Override
-    public void subscribeToPhotonVisionPoseEstimates(VisionSimInterface.EstimateConsumer consumer) {
-        this.estConsumer = consumer;
-
-        System.out.println("---------------------------------------------------");
-        System.out.println("PhotonVision pose estimates subscribed");
-        System.out.println("---------------------------------------------------");
-    }
-
     @Override
     public void periodic() {
         // We only do pose estimation if someone is subscribed
@@ -135,31 +112,16 @@ public class VisionSim implements VisionSimInterface {
             }
             updateEstimationStdDevs(visionEst, result.getTargets());
 
-            // Save the latest vision estimate so that it can be queried
-            latestVisPose = visionEst.map(est -> est.estimatedPose.toPose2d());
-
-            visionEst.ifPresent(
-                    est -> {
-                        if (estConsumer != null) {
-                            // Change our trust in the measurement based on the tags we can see
-                            var estStdDevs = getEstimationStdDevs();
-
-                            estConsumer.accept(est.estimatedPose.toPose2d(), est.timestampSeconds, estStdDevs);
-                        }
-                    });
-
-            if (m_addLimelightNetworkTables) {
-                // Publish to Limelight NetworkTables for LimelightOdometry to consume
-                LimelightData data = PhotonToLimelightConverter.convertPipelineResult(result, kRobotToCam);
-                double totalLatencyMs = data.pipelineLatencyMs + data.captureLatencyMs;
-                PhotonToLimelightConverter.convertBotpose(
-                    visionEst.map(est -> est.estimatedPose).orElse(null),
-                    result.getTargets(),
-                    kRobotToCam,
-                    totalLatencyMs,
-                    data);
-                limelightPublisher.publish(data);
-            }
+            // Publish to Limelight NetworkTables for LimelightOdometry to consume
+            LimelightData data = PhotonToLimelightConverter.convertPipelineResult(result, kRobotToCam);
+            double totalLatencyMs = data.pipelineLatencyMs + data.captureLatencyMs;
+            PhotonToLimelightConverter.convertBotpose(
+                visionEst.map(est -> est.estimatedPose).orElse(null),
+                result.getTargets(),
+                kRobotToCam,
+                totalLatencyMs,
+                data);
+            limelightPublisher.publish(data);
         }
     }
 
@@ -243,14 +205,5 @@ public class VisionSim implements VisionSimInterface {
                 "getSimDebugField should only be called in simulation");
         }
         return visionSystemSim.getDebugField();
-    }
-
-    @Override
-    public Optional<Pose2d> getLatestVisPose() {
-         if (!Robot.isSimulation()) {
-            throw new IllegalStateException(
-                "getLatestVisPose should only be called in simulation");
-        }
-        return latestVisPose;
     }
 }

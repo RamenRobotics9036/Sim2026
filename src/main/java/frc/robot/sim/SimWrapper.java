@@ -39,7 +39,6 @@ public class SimWrapper {
     private final SwerveDrivetrain<TalonFX, TalonFX, CANcoder> m_drivetrain;
     private final GroundTruthSimInterface m_groundTruthSim;
     private final VisionSimInterface m_visionSim;
-    private final boolean m_addLimelightNetworkTables;
 
     /**
      * Creates a new SimWrapper.
@@ -50,8 +49,6 @@ public class SimWrapper {
      */
     public SimWrapper(
             SwerveDrivetrain<TalonFX, TalonFX, CANcoder> drivetrain,
-            boolean addLimelightNetworkTables,
-            VisionSimInterface.EstimateConsumer photonVisionPoseConsumer,
             Consumer<Pose2d> poseResetConsumer) {
 
         if (!Robot.isSimulation()) {
@@ -64,27 +61,15 @@ public class SimWrapper {
             throw new IllegalArgumentException("Pose reset consumer cannot be null");
         }
 
-        // If we are adding Limelight NetworkTables, the caller should always get vision pose
-        // consumer using LimelightOdometry, not request it here.
-        if (addLimelightNetworkTables && photonVisionPoseConsumer != null) {
-            throw new IllegalArgumentException(
-                "Cannot add Limelight NetworkTables and request vision pose consumer simultaneously");
-        }
-
         m_drivetrain = drivetrain;
-        m_addLimelightNetworkTables = addLimelightNetworkTables;
 
         // Create ground truth simulation
         m_groundTruthSim = GroundTruthSimFactory.create(drivetrain, poseResetConsumer);
 
         // Create vision simulation
-        m_visionSim = VisionSimFactory.create(addLimelightNetworkTables);
+        m_visionSim = VisionSimFactory.create();
         if (m_visionSim == null) {
             throw new IllegalStateException("VisionSimInterface creation failed");
-        }
-
-        if (photonVisionPoseConsumer != null) {
-            m_visionSim.subscribeToPhotonVisionPoseEstimates(photonVisionPoseConsumer);
         }
     }
 
@@ -151,6 +136,7 @@ public class SimWrapper {
     /**
      * Get the Pose2d of each swerve module based on the current robot pose and module states.
      */
+    // $TODO - Delete this
     private Pose2d[] getModulePoses(SwerveDrivetrain.SwerveDriveState driveState) {
         Pose2d[] modulePoses = new Pose2d[4];
         for (int i = 0; i < 4; i++) {
@@ -182,26 +168,5 @@ public class SimWrapper {
      */
     public Field2d getSimDebugField() {
         return m_visionSim.getSimDebugField();
-    }
-
-    /**
-     * Get the latest point in time vision pose estimate.
-     */
-    public Optional<Pose2d> getLatestVisPose() {
-        return m_visionSim.getLatestVisPose();
-    }
-
-    /**
-     * Determines if vision measurements should come from LimelightOdometry.
-     * In simulation, returns true only if Limelight NetworkTables are enabled.
-     *
-     * @return true if vision measurements should come from LimelightOdometry
-     */
-    public boolean isVisionMeasurementFromLimelight() {
-        if (!Robot.isSimulation()) {
-            return true;
-        }
-
-        return m_addLimelightNetworkTables;
     }
 }

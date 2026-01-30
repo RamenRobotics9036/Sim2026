@@ -72,20 +72,13 @@ public class RobotContainer {
         if (Robot.isSimulation()) {
             m_simWrapper = new SimWrapper(
                 drivetrain,
-                m_addLimelightNetworkTablesInSim,
-                m_addLimelightNetworkTablesInSim ? null : drivetrain::addVisionMeasurement,
                 this::resetRobotPose);
         }
         else {
             m_simWrapper = null;
         }
 
-        // When the robot is NOT in simulation, we always get the vision measurements from LimelightOdometry.
-        // If in simulation, it depends on m_addLimelightNetworkTablesInSim.
-        m_limelightOdometry = new LimelightOdometry();
-        if (m_simWrapper == null || m_simWrapper.isVisionMeasurementFromLimelight()) {
-            m_limelightOdometry.subscribePoseEstimates(drivetrain::addVisionMeasurement);
-        }
+        m_limelightOdometry = new LimelightOdometry(drivetrain::addVisionMeasurement);
 
         // Warmup PathPlanner to avoid Java pauses
         FollowPathCommand.warmupCommand().schedule();

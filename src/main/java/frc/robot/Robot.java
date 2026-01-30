@@ -29,8 +29,6 @@ public class Robot extends TimedRobot {
 
     @Override
     public void robotPeriodic() {
-        Optional<Pose2d> showVisPose = Optional.empty();
-
         // $TODO - Wrapper for sim features
         if (Robot.isSimulation() && m_robotContainer.m_simWrapper != null) {
             // NOTE: We run the vision period FIRST in robotPeriodic, since it updates
@@ -41,14 +39,9 @@ public class Robot extends TimedRobot {
 
         m_robotContainer.m_limelightOdometry.periodic();
 
-        // Do we get vision poses from PhotonVision or LimelightOdometry?
-        if (m_robotContainer.m_simWrapper == null || m_robotContainer.m_simWrapper.isVisionMeasurementFromLimelight()) {
-            showVisPose = m_robotContainer.m_limelightOdometry.getLatestVisPose();
-        } else {
-            showVisPose = m_robotContainer.m_simWrapper.getLatestVisPose();
-        }
-
         if (Robot.isSimulation()) {
+            Optional<Pose2d> showVisPose = m_robotContainer.m_limelightOdometry.getLatestVisPose();
+
             showVisPose.ifPresentOrElse(
                 curpose ->
                     m_robotContainer.m_simWrapper.getSimDebugField()

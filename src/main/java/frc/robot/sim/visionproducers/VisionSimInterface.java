@@ -1,7 +1,5 @@
 package frc.robot.sim.visionproducers;
 
-import java.util.Optional;
-
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.numbers.N1;
@@ -22,14 +20,6 @@ public interface VisionSimInterface {
     public static interface EstimateConsumer {
         void accept(Pose2d pose, double timestamp, Matrix<N3, N1> estimationStdDevs);
     }
-
-    /**
-     * Subscribe to pose estimates from this vision system.
-     * @param consumer Lambda that will accept a pose estimate and pass it to your desired
-     *     {@link edu.wpi.first.math.estimator.SwerveDrivePoseEstimator}
-     */
-    void subscribeToPhotonVisionPoseEstimates(EstimateConsumer consumer);
-
     /**
      * Process vision data. Should be called periodically (e.g., from robotPeriodic).
      */
@@ -53,9 +43,4 @@ public interface VisionSimInterface {
      * @return The debug Field2d, or null if not in simulation
      */
     Field2d getSimDebugField();
-
-    /**
-     * Get the latest point in time vision pose estimate.
-     */
-    Optional<Pose2d> getLatestVisPose();
 }

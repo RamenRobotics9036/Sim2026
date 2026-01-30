@@ -20,20 +20,8 @@ public class LimelightOdometry {
     private Optional<Pose2d> latestVisPose = Optional.empty();
 
     /** Constructor */
-    public LimelightOdometry() {
-    }
-
-    /**
-     * Subscribe to pose estimates from this vision system.
-     * @param consumer Lambda that will accept a pose estimate and pass it to your desired
-     *     {@link edu.wpi.first.math.estimator.SwerveDrivePoseEstimator}
-     */
-    public void subscribePoseEstimates(VisionSimInterface.EstimateConsumer consumer) {
-        this.estConsumer = consumer;
-
-        System.out.println("---------------------------------------------------");
-        System.out.println("Limelight pose estimates subscribed\"");
-        System.out.println("---------------------------------------------------");
+    public LimelightOdometry(VisionSimInterface.EstimateConsumer poseConsumer) {
+        this.estConsumer = poseConsumer;
     }
 
     public void periodic() {

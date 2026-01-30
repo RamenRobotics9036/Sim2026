@@ -13,9 +13,9 @@ public class VisionSimFactory {
      *
      * @return A VisionSimInterface instance, or null if not in simulation
      */
-    public static VisionSimInterface create(boolean addLimelightNetworkTables) {
+    public static VisionSimInterface create() {
         if (Robot.isSimulation()) {
-            return new VisionSim(addLimelightNetworkTables);
+            return new VisionSim();
         }
         return null;
     }
