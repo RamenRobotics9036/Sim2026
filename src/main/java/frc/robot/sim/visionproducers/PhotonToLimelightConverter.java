@@ -48,6 +48,7 @@ public class PhotonToLimelightConverter {
     /**
      * Convert list of targets to rawfiducials array format.
      */
+    @SuppressWarnings("checkstyle:VariableDeclarationUsageDistance")
     public static void convertRawFiducials(
             List<PhotonTrackedTarget> targets,
             Transform3d robotToCamera,
@@ -93,6 +94,7 @@ public class PhotonToLimelightConverter {
     /**
      * Build the t2d array from targets and latency.
      */
+    @SuppressWarnings("checkstyle:VariableDeclarationUsageDistance")
     public static void convertT2D(
             List<PhotonTrackedTarget> targets,
             double latency,
@@ -156,6 +158,7 @@ public class PhotonToLimelightConverter {
      * Format: [x, y, z, roll, pitch, yaw, latency, tagCount, tagSpan, avgDist, avgArea,
      * ...rawFiducials]
      */
+    @SuppressWarnings("checkstyle:VariableDeclarationUsageDistance")
     public static void convertBotpose(
             Pose3d robotPose,
             List<PhotonTrackedTarget> targets,

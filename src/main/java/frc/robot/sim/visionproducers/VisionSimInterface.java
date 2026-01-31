@@ -18,8 +18,16 @@ public interface VisionSimInterface {
      */
     @FunctionalInterface
     public static interface EstimateConsumer {
+        /**
+         * Accept a pose estimate from the vision system.
+         *
+         * @param pose The estimated robot pose
+         * @param timestamp The timestamp of the estimate
+         * @param estimationStdDevs The standard deviations of the estimation
+         */
         void accept(Pose2d pose, double timestamp, Matrix<N3, N1> estimationStdDevs);
     }
+
     /**
      * Process vision data. Should be called periodically (e.g., from robotPeriodic).
      */
@@ -28,18 +36,21 @@ public interface VisionSimInterface {
     /**
      * Update the vision simulation with the current robot pose.
      * Should be called from simulationPeriodic.
+     *
      * @param robotSimPose The ground truth robot pose in simulation
      */
     void simulationPeriodic(Pose2d robotSimPose);
 
     /**
      * Reset pose history of the robot in the vision system simulation.
+     *
      * @param pose The pose to reset to
      */
     void resetSimPose(Pose2d pose);
 
     /**
      * Get the Field2d for visualizing the robot and objects on the field.
+     *
      * @return The debug Field2d, or null if not in simulation
      */
     Field2d getSimDebugField();

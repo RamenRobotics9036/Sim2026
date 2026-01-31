@@ -45,6 +45,7 @@ import org.photonvision.simulation.VisionSystemSim;
 import org.photonvision.targeting.PhotonTrackedTarget;
 
 /** Vision simulation using PhotonVision. */
+@SuppressWarnings("PMD.TooManyStaticImports")
 public class VisionSim implements VisionSimInterface {
     private final PhotonCamera m_camera;
     private final PhotonPoseEstimator m_photonEstimator;

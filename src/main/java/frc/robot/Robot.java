@@ -4,15 +4,17 @@
 
 package frc.robot;
 
-import java.util.Optional;
-
 import com.ctre.phoenix6.HootAutoReplay;
-
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import java.util.Optional;
 
+
+/**
+ * Robot main class.
+*/
 public class Robot extends TimedRobot {
     private Command m_autonomousCommand;
 
@@ -23,6 +25,9 @@ public class Robot extends TimedRobot {
         .withTimestampReplay()
         .withJoystickReplay();
 
+    /**
+     * Constructor.
+     */
     public Robot() {
         m_robotContainer = new RobotContainer();
     }
@@ -48,7 +53,10 @@ public class Robot extends TimedRobot {
                         .getObject("VisionEstimation")
                         .setPose(curpose),
                 () -> {
-                    m_robotContainer.m_simWrapper.getSimDebugField().getObject("VisionEstimation").setPoses();
+                    m_robotContainer.m_simWrapper
+                        .getSimDebugField()
+                        .getObject("VisionEstimation")
+                        .setPoses();
                 });
         }
 

@@ -1,38 +1,44 @@
 package frc.robot.visutils;
 
+import static frc.robot.sim.visionproducers.VisionSimConstants.Vision.kMultiTagStdDevs;
+import static frc.robot.sim.visionproducers.VisionSimConstants.Vision.kSingleTagStdDevs;
+
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
-import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import frc.robot.LimelightHelpers;
-import java.util.Optional;
 import frc.robot.sim.visionproducers.VisionSimInterface;
-import static frc.robot.sim.visionproducers.VisionSimConstants.Vision.*;
+import java.util.Optional;
 
 
+/**
+ * Limelight-based odometry measurement source.
+ */
 public class LimelightOdometry {
-    private VisionSimInterface.EstimateConsumer estConsumer;
-    private Matrix<N3, N1> curStdDevs = kSingleTagStdDevs;
-    private double lastTimestamp = 0;
+    private VisionSimInterface.EstimateConsumer m_estConsumer;
+    private Matrix<N3, N1> m_curStdDevs = kSingleTagStdDevs;
+    private double m_lastTimestamp = 0;
 
-    private Optional<Pose2d> latestVisPose = Optional.empty();
+    private Optional<Pose2d> m_latestVisPose = Optional.empty();
 
-    /** Constructor */
+    /** Constructor. */
     public LimelightOdometry(VisionSimInterface.EstimateConsumer poseConsumer) {
-        this.estConsumer = poseConsumer;
+        this.m_estConsumer = poseConsumer;
     }
 
+    /** Periodic update; should be called from robot periodic. */
     public void periodic() {
         addVisionMeasurementV1();
     }
 
     private void addVisionMeasurementV1() {
-        LimelightHelpers.PoseEstimate mt1 = LimelightHelpers.getBotPoseEstimate_wpiBlue("limelight");
+        LimelightHelpers.PoseEstimate mt1 =
+            LimelightHelpers.getBotPoseEstimate_wpiBlue("limelight");
 
         // Save the latest vision estimate so that it can be queried
-        latestVisPose = Optional.ofNullable(mt1).map(est -> est.pose);
+        m_latestVisPose = Optional.ofNullable(mt1).map(est -> est.pose);
 
         if (mt1 == null) {
             // In simulation, limelight may not be present until a few cycles of periodic, since we
@@ -41,10 +47,10 @@ public class LimelightOdometry {
         }
 
         // Skip if this is the same data we already processed
-        if (mt1.timestampSeconds == lastTimestamp) {
+        if (mt1.timestampSeconds == m_lastTimestamp) {
             return;
         }
-        lastTimestamp = mt1.timestampSeconds;
+        m_lastTimestamp = mt1.timestampSeconds;
 
         // Update std devs based on tag count and distance
         updateEstimationStdDevs(mt1);
@@ -61,21 +67,22 @@ public class LimelightOdometry {
         }
 
         // Check if std devs indicate rejection
-        if (curStdDevs.get(0, 0) == Double.MAX_VALUE) {
+        if (m_curStdDevs.get(0, 0) == Double.MAX_VALUE) {
             return;
         }
 
         // Print # of tags matching AND the stddevs values
-        System.out.printf("LimelightOdometry: Adding vision measurement with %d tags, stdDevs=(%.2f, %.2f, %.2f)%n",
-            mt1.tagCount, curStdDevs.get(0, 0), curStdDevs.get(1, 0), curStdDevs.get(2, 0));
+        System.out.printf(
+            "LimelightOdometry: Vision measurement with %d tags, stdDevs=(%.2f, %.2f, %.2f)%n",
+            mt1.tagCount, m_curStdDevs.get(0, 0), m_curStdDevs.get(1, 0), m_curStdDevs.get(2, 0));
 
-        if (estConsumer != null) {
-            estConsumer.accept(mt1.pose, mt1.timestampSeconds, curStdDevs);
+        if (m_estConsumer != null) {
+            m_estConsumer.accept(mt1.pose, mt1.timestampSeconds, m_curStdDevs);
         }
     }
 
     /**
-     * Calculates new standard deviations. This algorithm is a heuristic that creates dynamic standard
+     * Calculates new standard deviations. This algorithm is a heuristic that creates dynamic std
      * deviations based on number of tags and distance from the tags.
      *
      * @param poseEstimate The Limelight pose estimate to evaluate
@@ -83,7 +90,7 @@ public class LimelightOdometry {
     private void updateEstimationStdDevs(LimelightHelpers.PoseEstimate poseEstimate) {
         if (poseEstimate == null || poseEstimate.tagCount == 0) {
             // No pose input. Default to single-tag std devs
-            curStdDevs = kSingleTagStdDevs;
+            m_curStdDevs = kSingleTagStdDevs;
             return;
         }
 
@@ -101,14 +108,15 @@ public class LimelightOdometry {
         // Increase std devs based on (average) distance
         if (numTags == 1 && avgDist > 4) {
             estStdDevs = VecBuilder.fill(Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE);
-        } else {
+        }
+        else {
             estStdDevs = estStdDevs.times(1 + (avgDist * avgDist / 30));
         }
 
-        curStdDevs = estStdDevs;
+        m_curStdDevs = estStdDevs;
     }
 
     public Optional<Pose2d> getLatestVisPose() {
-        return latestVisPose;
+        return m_latestVisPose;
     }
 }
