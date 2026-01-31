@@ -1,13 +1,10 @@
 package frc.robot.sim;
 
-import java.util.function.Consumer;
-
 import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.swerve.SwerveDrivetrain;
 import com.pathplanner.lib.util.FlippingUtil;
-
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -15,6 +12,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Robot;
+import java.util.function.Consumer;
 
 
 /**
@@ -24,43 +22,49 @@ import frc.robot.Robot;
  */
 public class GroundTruthSim implements GroundTruthSimInterface {
 
-    private final SwerveDrivetrain<TalonFX, TalonFX, CANcoder> drivetrain;
+    private final SwerveDrivetrain<TalonFX, TalonFX, CANcoder> m_drivetrain;
 
-    /** Consumer to notify RobotContainer when pose is reset */
-    private final Consumer<Pose2d> poseResetConsumer;
+    /** Consumer to notify RobotContainer when pose is reset. */
+    private final Consumer<Pose2d> m_poseResetConsumer;
 
     /** The ground truth pose tracks where the robot actually is in simulation physics. */
-    private Pose2d groundTruthPose = new Pose2d();
+    private Pose2d m_groundTruthPose = new Pose2d();
 
-    /** Track accumulated distance for telemetry */
-    private double totalDistanceTraveled = 0.0;
-    private double totalRotation = 0.0;
+    /** Track accumulated distance for telemetry. */
+    private double m_totalDistanceTraveled = 0.0;
 
-    /** Last update time for delta calculation */
-    private double lastUpdateTime;
+    @SuppressWarnings("unused")
+    private double m_totalRotation = 0.0;
 
-    /** Timeout in seconds before cycle resets to beginning */
+    /** Last update time for delta calculation. */
+    private double m_lastUpdateTime;
+
+    /** Timeout in seconds before cycle resets to beginning. */
     private static final double CYCLE_TIMEOUT_SECONDS = 2.0;
-    private double lastCycleTime = 0.0;
+    private double m_lastCycleTime = 0.0;
 
-    /** Current position in the reset cycle (0-N) */
-    private int currrentCycleState = 0;
+    /** Current position in the reset cycle (0-N). */
+    private int m_currrentCycleState = 0;
 
     /**
      * Constructs a GroundTruthSim instance.
      * This class is only intended for use in simulation.
      *
      * @param drivetrain The swerve drivetrain to track and manipulate
-     * @param poseResetConsumer Consumer to be called when pose is reset (e.g., RobotContainer::resetRobotPose)
+     * @param poseResetConsumer Consumer to be called when pose is reset
+     *     (e.g., RobotContainer::resetRobotPose)
      * @throws IllegalStateException if called outside of simulation mode
      */
-    public GroundTruthSim(SwerveDrivetrain<TalonFX, TalonFX, CANcoder> drivetrain, Consumer<Pose2d> poseResetConsumer) {
+    public GroundTruthSim(
+        SwerveDrivetrain<TalonFX, TalonFX, CANcoder> drivetrain,
+        Consumer<Pose2d> poseResetConsumer) {
+
         if (!Robot.isSimulation()) {
-            throw new IllegalStateException("GroundTruthSim should only be instantiated in simulation mode");
+            throw new IllegalStateException("GroundTruthSim only instantiated in simulation mode");
         }
-        this.drivetrain = drivetrain;
-        this.poseResetConsumer = poseResetConsumer;
-        this.lastUpdateTime = Utils.getCurrentTimeSeconds();
+        this.m_drivetrain = drivetrain;
+        this.m_poseResetConsumer = poseResetConsumer;
+        this.m_lastUpdateTime = Utils.getCurrentTimeSeconds();
     }
 
     /**
@@ -69,10 +73,10 @@ public class GroundTruthSim implements GroundTruthSimInterface {
      */
     public void updateGroundTruthPose() {
         double currentTime = Utils.getCurrentTimeSeconds();
-        double deltaTime = currentTime - lastUpdateTime;
-        lastUpdateTime = currentTime;
+        double deltaTime = currentTime - m_lastUpdateTime;
+        m_lastUpdateTime = currentTime;
 
-        ChassisSpeeds speeds = drivetrain.getState().Speeds;
+        ChassisSpeeds speeds = m_drivetrain.getState().Speeds;
 
         // Calculate how much the robot moved this timestep
         double dx = speeds.vxMetersPerSecond * deltaTime;
@@ -82,20 +86,20 @@ public class GroundTruthSim implements GroundTruthSimInterface {
         double distanceThisStep = Math.hypot(dx, dy);
         double rotationThisStep = Math.abs(dtheta);
 
-        totalDistanceTraveled += distanceThisStep;
-        totalRotation += rotationThisStep;
+        m_totalDistanceTraveled += distanceThisStep;
+        m_totalRotation += rotationThisStep;
 
         // Update the ground truth pose (using field-relative velocities)
         // Rotate the robot-relative velocity by the current heading to get field-relative
-        double cos = Math.cos(groundTruthPose.getRotation().getRadians());
-        double sin = Math.sin(groundTruthPose.getRotation().getRadians());
+        double cos = Math.cos(m_groundTruthPose.getRotation().getRadians());
+        double sin = Math.sin(m_groundTruthPose.getRotation().getRadians());
         double fieldDx = dx * cos - dy * sin;
         double fieldDy = dx * sin + dy * cos;
 
-        groundTruthPose = new Pose2d(
-            groundTruthPose.getX() + fieldDx,
-            groundTruthPose.getY() + fieldDy,
-            groundTruthPose.getRotation().plus(new Rotation2d(dtheta))
+        m_groundTruthPose = new Pose2d(
+            m_groundTruthPose.getX() + fieldDx,
+            m_groundTruthPose.getY() + fieldDy,
+            m_groundTruthPose.getRotation().plus(new Rotation2d(dtheta))
         );
     }
 
@@ -107,7 +111,7 @@ public class GroundTruthSim implements GroundTruthSimInterface {
      */
     @Override
     public Pose2d getGroundTruthPose() {
-        return groundTruthPose;
+        return m_groundTruthPose;
     }
 
     /**
@@ -117,9 +121,9 @@ public class GroundTruthSim implements GroundTruthSimInterface {
      */
     @Override
     public void resetGroundTruthPoseForSim(Pose2d pose) {
-        groundTruthPose = pose;
-        totalDistanceTraveled = 0.0;
-        totalRotation = 0.0;
+        m_groundTruthPose = pose;
+        m_totalDistanceTraveled = 0.0;
+        m_totalRotation = 0.0;
     }
 
     /**
@@ -130,7 +134,10 @@ public class GroundTruthSim implements GroundTruthSimInterface {
      * @param useCorrectTeamSide If true, places robot on correct alliance side (flips for red).
      *                           If false, places robot on the wrong side of the field.
      */
-    public void resetAllPosesToSelectedAutoPos(Pose2d blueAlliancePose, boolean useCorrectTeamSide) {
+    public void resetAllPosesToSelectedAutoPos(
+        Pose2d blueAlliancePose,
+        boolean useCorrectTeamSide) {
+
         boolean shouldFlipPose = isRedAlliance();
         if (!useCorrectTeamSide) {
             shouldFlipPose = !shouldFlipPose;
@@ -141,7 +148,7 @@ public class GroundTruthSim implements GroundTruthSimInterface {
             : blueAlliancePose;
 
         // Trigger robot pose reset
-        poseResetConsumer.accept(pose);
+        m_poseResetConsumer.accept(pose);
     }
 
     /**
@@ -152,7 +159,7 @@ public class GroundTruthSim implements GroundTruthSimInterface {
      *   2: Origin on correct alliance side
      *   3: Origin on wrong alliance side
      *
-     * If CYCLE_TIMEOUT_SECONDS elapses between calls, restarts from 0.
+     * <p>If CYCLE_TIMEOUT_SECONDS elapses between calls, restarts from 0.
      *
      * @param blueAlliancePose The auto starting pose (blue alliance origin)
      */
@@ -161,25 +168,27 @@ public class GroundTruthSim implements GroundTruthSimInterface {
         double currentTime = Utils.getCurrentTimeSeconds();
 
         // Reset cycle if timeout elapsed
-        if (currentTime - lastCycleTime > CYCLE_TIMEOUT_SECONDS) {
-            currrentCycleState = 0;
+        if (currentTime - m_lastCycleTime > CYCLE_TIMEOUT_SECONDS) {
+            m_currrentCycleState = 0;
         }
-        lastCycleTime = currentTime;
+        m_lastCycleTime = currentTime;
 
         // Execute based on current cycle state
-        switch (currrentCycleState) {
+        switch (m_currrentCycleState) {
             case 0 -> resetAllPosesToSelectedAutoPos(blueAlliancePose, true);
             case 1 -> resetAllPosesToSelectedAutoPos(blueAlliancePose, false);
             case 2 -> resetAllPosesToSelectedAutoPos(new Pose2d(), true);
             case 3 -> resetAllPosesToSelectedAutoPos(new Pose2d(), false);
+            default -> throw new IllegalStateException(
+                "Invalid cycle state: " + m_currrentCycleState);
         }
 
         // Advance to next state
-        currrentCycleState = (currrentCycleState + 1) % 4;
+        m_currrentCycleState = (m_currrentCycleState + 1) % 4;
     }
 
     /**
-     * @return true if the robot is currently configured as red alliance
+     * True if the robot is currently configured as red alliance.
      */
     private boolean isRedAlliance() {
         return DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red;
@@ -197,7 +206,7 @@ public class GroundTruthSim implements GroundTruthSimInterface {
     @Override
     public void injectDrift(double translationOffsetMeters, double rotationOffsetDegrees) {
         // Get current estimated pose
-        Pose2d currentPose = drivetrain.getState().Pose;
+        Pose2d currentPose = m_drivetrain.getState().Pose;
 
         // Create offset - add random direction for translation
         double angle = Math.random() * 2 * Math.PI;
@@ -216,7 +225,7 @@ public class GroundTruthSim implements GroundTruthSimInterface {
 
         // Reset the pose estimator to the drifted position
         // The ground truth pose remains at the actual position
-        drivetrain.resetPose(driftedPose);
+        m_drivetrain.resetPose(driftedPose);
     }
 
     /**
@@ -224,20 +233,27 @@ public class GroundTruthSim implements GroundTruthSimInterface {
      * Call this from Robot.simulationPeriodic().
      */
     public void publishTelemetry() {
-        SmartDashboard.putNumber("Sim/GroundTruth/X", groundTruthPose.getX());
-        SmartDashboard.putNumber("Sim/GroundTruth/Y", groundTruthPose.getY());
-        SmartDashboard.putNumber("Sim/GroundTruth/RotationDeg", groundTruthPose.getRotation().getDegrees());
+        SmartDashboard.putNumber("Sim/GroundTruth/X", m_groundTruthPose.getX());
+        SmartDashboard.putNumber("Sim/GroundTruth/Y", m_groundTruthPose.getY());
+        SmartDashboard.putNumber(
+            "Sim/GroundTruth/RotationDeg",
+            m_groundTruthPose.getRotation().getDegrees());
 
-        Pose2d estimatedPose = drivetrain.getState().Pose;
+        Pose2d estimatedPose = m_drivetrain.getState().Pose;
         SmartDashboard.putNumber("Sim/EstimatedPose/X", estimatedPose.getX());
         SmartDashboard.putNumber("Sim/EstimatedPose/Y", estimatedPose.getY());
-        SmartDashboard.putNumber("Sim/EstimatedPose/RotationDeg", estimatedPose.getRotation().getDegrees());
+        SmartDashboard.putNumber(
+            "Sim/EstimatedPose/RotationDeg",
+            estimatedPose.getRotation().getDegrees());
 
-        double poseError = groundTruthPose.getTranslation().getDistance(estimatedPose.getTranslation());
-        double headingError = Math.abs(groundTruthPose.getRotation().minus(estimatedPose.getRotation()).getDegrees());
+        double poseError = m_groundTruthPose
+            .getTranslation()
+            .getDistance(estimatedPose.getTranslation());
+        double headingError = Math.abs(
+            m_groundTruthPose.getRotation().minus(estimatedPose.getRotation()).getDegrees());
         SmartDashboard.putNumber("Sim/PoseErrorMeters", poseError);
         SmartDashboard.putNumber("Sim/HeadingErrorDeg", headingError);
-        SmartDashboard.putNumber("Sim/TotalDistanceTraveled", totalDistanceTraveled);
+        SmartDashboard.putNumber("Sim/TotalDistanceTraveled", m_totalDistanceTraveled);
     }
 
     /**

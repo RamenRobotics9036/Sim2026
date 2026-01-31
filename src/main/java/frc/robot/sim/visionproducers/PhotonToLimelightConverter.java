@@ -1,13 +1,12 @@
 package frc.robot.sim.visionproducers;
 
-import org.photonvision.targeting.PhotonPipelineResult;
-import org.photonvision.targeting.PhotonTrackedTarget;
 import edu.wpi.first.math.geometry.Pose3d;
-import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.util.Units;
-
 import java.util.List;
+import org.photonvision.targeting.PhotonPipelineResult;
+import org.photonvision.targeting.PhotonTrackedTarget;
+
 
 /**
  * Pure transformation functions: PhotonVision → LimelightData.
@@ -18,7 +17,7 @@ public class PhotonToLimelightConverter {
     /**
      * Convert a single PhotonTrackedTarget to basic Limelight targeting data.
      *
-     * April tab NetworkTables format is documented here:
+     * <p>April tab NetworkTables format is documented here:
      * https://docs.limelightvision.io/docs/docs-limelight/apis/complete-networktables-api#apriltag-and-3d-data
      */
     public static void convertTarget(PhotonTrackedTarget target, LimelightData data) {
@@ -88,7 +87,8 @@ public class PhotonToLimelightConverter {
         data.pipelineLatencyMs = result.metadata.getLatencyMillis();
 
         // Capture latency is typically small; use a nominal value for simulation
-        data.captureLatencyMs = 5.0;    }
+        data.captureLatencyMs = 5.0;
+    }
 
     /**
      * Build the t2d array from targets and latency.
@@ -153,7 +153,8 @@ public class PhotonToLimelightConverter {
 
     /**
      * Build the botpose array in Limelight format from robot pose and target data.
-     * Format: [x, y, z, roll, pitch, yaw, latency, tagCount, tagSpan, avgDist, avgArea, ...rawFiducials]
+     * Format: [x, y, z, roll, pitch, yaw, latency, tagCount, tagSpan, avgDist, avgArea,
+     * ...rawFiducials]
      */
     public static void convertBotpose(
             Pose3d robotPose,
@@ -189,8 +190,10 @@ public class PhotonToLimelightConverter {
         // Calculate tag span, average distance, and average area
         double totalArea = 0;
         double totalDist = 0;
-        double minX = Double.MAX_VALUE, maxX = Double.MIN_VALUE;
-        double minY = Double.MAX_VALUE, maxY = Double.MIN_VALUE;
+        double minX = Double.MAX_VALUE;
+        double maxX = Double.MIN_VALUE;
+        double minY = Double.MAX_VALUE;
+        double maxY = Double.MIN_VALUE;
 
         for (PhotonTrackedTarget target : targets) {
             totalArea += target.getArea();
@@ -240,7 +243,8 @@ public class PhotonToLimelightConverter {
         data.botposeWpiBlue = botpose;
 
         // For WPI Red, mirror the pose (field is 16.54m x 8.21m for 2024 field)
-        // Red origin is at opposite corner, so x' = fieldLength - x, y' = fieldWidth - y, yaw' = yaw + 180
+        // Red origin is at opposite corner, so x' = fieldLength - x, y' = fieldWidth - y,
+        // yaw' = yaw + 180
         double[] botposeRed = botpose.clone();
         botposeRed[0] = 16.54 - robotPose.getX();
         botposeRed[1] = 8.21 - robotPose.getY();

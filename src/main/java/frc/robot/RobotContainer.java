@@ -4,66 +4,73 @@
 
 package frc.robot;
 
-import static edu.wpi.first.units.Units.*;
+import static edu.wpi.first.units.Units.MetersPerSecond;
+import static edu.wpi.first.units.Units.RadiansPerSecond;
+import static edu.wpi.first.units.Units.RotationsPerSecond;
 
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
-
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.commands.FollowPathCommand;
 import com.pathplanner.lib.commands.PathPlannerAuto;
-
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
-
 import frc.robot.generated.TunerConstants;
 import frc.robot.sim.JoystickInputsRecord;
 import frc.robot.sim.SimWrapper;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.visutils.LimelightOdometry;
 
+/**
+ * This class is where the bulk of the robot should be declared. Since Command-based is a
+ * "declarative" paradigm, very little robot logic should actually be handled in the Robot
+ * periodic methods (other than the scheduler calls). Instead, the structure of the robot
+ * (including subsystems, commands, and trigger mappings) should be declared here.
+ */
 public class RobotContainer {
-    private double MaxSpeed = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
-    private double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second max angular velocity
+    // kSpeedAt12Volts desired top speed
+    private static double MaxSpeed = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond);
 
-    // Configuration for vision
-    private final boolean m_addLimelightNetworkTablesInSim = true;
+    // 3/4 of a rotation per second max angular velocity
+    private static double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond);
 
     /* Setting up bindings for necessary control of the swerve drive platform */
-    private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
-            .withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.1) // Add a 10% deadband
-            .withDriveRequestType(DriveRequestType.OpenLoopVoltage); // Use open-loop control for drive motors
-    private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
-    private final SwerveRequest.PointWheelsAt point = new SwerveRequest.PointWheelsAt();
-    private final SwerveRequest.RobotCentric forwardStraight = new SwerveRequest.RobotCentric()
-            .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
+    private final SwerveRequest.FieldCentric m_drive = new SwerveRequest.FieldCentric()
+        .withDeadband(MaxSpeed * 0.1)
+        .withRotationalDeadband(MaxAngularRate * 0.1) // Add a 10% deadband
+        .withDriveRequestType(DriveRequestType.OpenLoopVoltage); // Open-loop control for motors
+    private final SwerveRequest.SwerveDriveBrake m_brake = new SwerveRequest.SwerveDriveBrake();
+    private final SwerveRequest.PointWheelsAt m_point = new SwerveRequest.PointWheelsAt();
+    private final SwerveRequest.RobotCentric m_forwardStraight = new SwerveRequest.RobotCentric()
+        .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
 
-    private final Telemetry logger = new Telemetry(MaxSpeed);
+    private final Telemetry m_logger = new Telemetry(MaxSpeed);
 
-    private final CommandXboxController joystick = new CommandXboxController(0);
+    private final CommandXboxController m_joystick = new CommandXboxController(0);
 
-    public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
+    public final CommandSwerveDrivetrain m_drivetrain = TunerConstants.createDrivetrain();
 
     /* Path follower */
-    private final SendableChooser<Command> autoChooser;
+    private final SendableChooser<Command> m_autoChooser;
 
-    /** Stores the starting pose of the currently selected auto */
-    private Pose2d selectedAutoStartingPose = new Pose2d();
+    /** Stores the starting pose of the currently selected auto. */
+    private Pose2d m_selectedAutoStartingPose = new Pose2d();
 
-    /** Simulation wrapper - null when not in simulation */
+    /** Simulation wrapper - null when not in simulation. */
     public final SimWrapper m_simWrapper;
 
     public final LimelightOdometry m_limelightOdometry;
 
+    /** Constructor. */
+    @SuppressWarnings("removal")
     public RobotContainer() {
-       autoChooser = AutoBuilder.buildAutoChooser("Tests");
+        m_autoChooser = AutoBuilder.buildAutoChooser("Tests");
         initAutoSelector();
 
         configureBindings();
@@ -71,29 +78,29 @@ public class RobotContainer {
         // $TODO - Wrapper for sim features
         if (Robot.isSimulation()) {
             m_simWrapper = new SimWrapper(
-                drivetrain,
+                m_drivetrain,
                 this::resetRobotPose);
         }
         else {
             m_simWrapper = null;
         }
 
-        m_limelightOdometry = new LimelightOdometry(drivetrain::addVisionMeasurement);
+        m_limelightOdometry = new LimelightOdometry(m_drivetrain::addVisionMeasurement);
 
         // Warmup PathPlanner to avoid Java pauses
         FollowPathCommand.warmupCommand().schedule();
     }
 
     private Command getJoystickCommandForRobot() {
-        return drivetrain.applyRequest(() -> {
-            double leftX = joystick.getLeftX();
-            double leftY = joystick.getLeftY();
-            double rightX = joystick.getRightX();
+        return m_drivetrain.applyRequest(() -> {
+            double leftX = m_joystick.getLeftX();
+            double leftY = m_joystick.getLeftY();
+            double rightX = m_joystick.getRightX();
 
             // $TODO - Wrapper for sim features
             if (Robot.isSimulation()) {
                 JoystickInputsRecord newJoystickInputs = SimWrapper.transformJoystickOrientation(
-                    drivetrain.getOperatorForwardDirection().getDegrees(),
+                    m_drivetrain.getOperatorForwardDirection().getDegrees(),
                     leftX,
                     leftY,
                     rightX);
@@ -102,75 +109,85 @@ public class RobotContainer {
                 rightX = newJoystickInputs.rotatetX();
             }
 
-            return drive.withVelocityX(-leftY * MaxSpeed) // Drive forward with negative Y (forward)
+            return m_drive.withVelocityX(-leftY * MaxSpeed) // Drive forward with negative Y
                 .withVelocityY(-leftX * MaxSpeed) // Drive left with negative X (left)
-                .withRotationalRate(-rightX * MaxAngularRate); // Drive counterclockwise with negative X (left)
+                .withRotationalRate(-rightX * MaxAngularRate); // Counterclockwise negative X (left)
         });
     }
 
     private void configureBindings() {
         // Note that X is defined as forward according to WPILib convention,
         // and Y is defined as to the left according to WPILib convention.
-        drivetrain.setDefaultCommand(getJoystickCommandForRobot());
+        m_drivetrain.setDefaultCommand(getJoystickCommandForRobot());
 
         // Idle while the robot is disabled. This ensures the configured
         // neutral mode is applied to the drive motors while disabled.
         final var idle = new SwerveRequest.Idle();
         RobotModeTriggers.disabled().whileTrue(
-            drivetrain.applyRequest(() -> idle).ignoringDisable(true)
-        );
+            m_drivetrain.applyRequest(() -> idle).ignoringDisable(true));
 
-        joystick.a().whileTrue(drivetrain.applyRequest(() -> brake));
-        joystick.b().whileTrue(drivetrain.applyRequest(() ->
-            point.withModuleDirection(new Rotation2d(-joystick.getLeftY(), -joystick.getLeftX()))
-        ));
+        m_joystick.a().whileTrue(m_drivetrain.applyRequest(() -> m_brake));
+        m_joystick.b().whileTrue(
+            m_drivetrain.applyRequest(
+                () -> m_point.withModuleDirection(
+                    new Rotation2d(-m_joystick.getLeftY(), -m_joystick.getLeftX()))));
 
-        joystick.povUp().whileTrue(drivetrain.applyRequest(() ->
-            forwardStraight.withVelocityX(0.5).withVelocityY(0))
-        );
-        joystick.povDown().whileTrue(drivetrain.applyRequest(() ->
-            forwardStraight.withVelocityX(-0.5).withVelocityY(0))
-        );
+        m_joystick.povUp().whileTrue(
+            m_drivetrain.applyRequest(() -> m_forwardStraight.withVelocityX(0.5).withVelocityY(0)));
+        m_joystick.povDown().whileTrue(
+            m_drivetrain
+                .applyRequest(() -> m_forwardStraight.withVelocityX(-0.5).withVelocityY(0)));
 
         // Run SysId routines when holding back/start and X/Y.
         // Note that each routine should be run exactly once in a single log.
-        joystick.back().and(joystick.y()).whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
-        joystick.back().and(joystick.x()).whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));
-        joystick.start().and(joystick.y()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
-        joystick.start().and(joystick.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
+        m_joystick
+            .back()
+            .and(m_joystick.y())
+            .whileTrue(m_drivetrain.sysIdDynamic(Direction.kForward));
+        m_joystick
+            .back()
+            .and(m_joystick.x())
+            .whileTrue(m_drivetrain.sysIdDynamic(Direction.kReverse));
+        m_joystick
+            .start()
+            .and(m_joystick.y())
+            .whileTrue(m_drivetrain.sysIdQuasistatic(Direction.kForward));
+        m_joystick
+            .start()
+            .and(m_joystick.x())
+            .whileTrue(m_drivetrain.sysIdQuasistatic(Direction.kReverse));
 
         // $TODO - Bumper buttons
         if (Robot.isSimulation()) {
             // In simulation, inject drift with right bumper to test vision correction
-            joystick.rightBumper().onTrue(drivetrain.runOnce(() ->
-                m_simWrapper.injectDrift(0.5, 15.0)  // 0.5m translation, 15° rotation drift
-            ));
+            m_joystick.rightBumper()
+                .onTrue(m_drivetrain.runOnce(() -> m_simWrapper.injectDrift(0.5, 15.0)));
 
             // Left bumper resets robot to the starting pose of the selected auto
-            joystick.leftBumper().onTrue(drivetrain.runOnce(() ->
-                m_simWrapper.cycleResetPosition(selectedAutoStartingPose)
-            ));
+            m_joystick.leftBumper().onTrue(
+                m_drivetrain
+                    .runOnce(() -> m_simWrapper.cycleResetPosition(m_selectedAutoStartingPose)));
         }
 
-        drivetrain.registerTelemetry(logger::telemeterize);
+        m_drivetrain.registerTelemetry(m_logger::telemeterize);
     }
 
     public Command getAutonomousCommand() {
         /* Run the path selected from the auto chooser */
-        return autoChooser.getSelected();
+        return m_autoChooser.getSelected();
     }
 
     /**
      * Initializes the auto selector and publishes it to SmartDashboard.
      */
     private void initAutoSelector() {
-        SmartDashboard.putData("Auto Mode", autoChooser);
+        SmartDashboard.putData("Auto Mode", m_autoChooser);
 
         // Update starting pose when auto selection changes
-        autoChooser.onChange(this::onNewAutoSelected);
+        m_autoChooser.onChange(this::onNewAutoSelected);
 
         // Initialize starting pose from default selection
-        onNewAutoSelected(autoChooser.getSelected());
+        onNewAutoSelected(m_autoChooser.getSelected());
     }
 
     /**
@@ -180,10 +197,11 @@ public class RobotContainer {
     private void onNewAutoSelected(Command command) {
         if (command instanceof PathPlannerAuto auto) {
             Pose2d pose = auto.getStartingPose();
-            selectedAutoStartingPose = pose != null ? pose : new Pose2d();
-        } else {
+            m_selectedAutoStartingPose = pose != null ? pose : new Pose2d();
+        }
+        else {
             // "None" selection is an InstantCommand - reset to origin
-            selectedAutoStartingPose = new Pose2d();
+            m_selectedAutoStartingPose = new Pose2d();
         }
     }
 
@@ -191,7 +209,7 @@ public class RobotContainer {
      * Called when the robot pose is reset in simulation.
      * This is triggered by GroundTruthSim via the consumer pattern.
      *
-     * Resets both the ground truth pose and the drivetrain pose to the specified pose.
+     * <p>Resets both the ground truth pose and the drivetrain pose to the specified pose.
      * Also resets the vision system simulation pose history if a Vision instance is set.
      *
      * @param pose The new pose the robot has been reset to
@@ -199,7 +217,7 @@ public class RobotContainer {
     private void resetRobotPose(Pose2d pose) {
         System.out.println("Robot pose reset to: " + pose);
 
-        drivetrain.resetPose(pose);
+        m_drivetrain.resetPose(pose);
 
         // $TODO - Clean reset
         if (Robot.isSimulation()) {

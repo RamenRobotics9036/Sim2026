@@ -3,7 +3,6 @@ package frc.robot.sim;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.swerve.SwerveDrivetrain;
-
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -12,9 +11,8 @@ import frc.robot.Robot;
 import frc.robot.generated.TunerConstants;
 import frc.robot.sim.visionproducers.VisionSimFactory;
 import frc.robot.sim.visionproducers.VisionSimInterface;
-
-import java.util.Optional;
 import java.util.function.Consumer;
+
 
 /**
  * Unified simulation wrapper combining ground truth physics, vision simulation,
@@ -23,7 +21,7 @@ import java.util.function.Consumer;
  * <p>This class encapsulates all simulation-specific logic, keeping Robot and
  * RobotContainer free from simulation implementation details.
  *
- * Note that we encapsulated this into a composeable class rather than having
+ * <p>Note that we encapsulated this into a composeable class rather than having
  * the sim class subclass RobotContainer, since its cleaner this way to know
  * that the simulation code is only running under simulation conditions.
  */
@@ -44,8 +42,8 @@ public class SimWrapper {
      * Creates a new SimWrapper.
      *
      * @param drivetrain The swerve drivetrain
-     * @param poseResetConsumer Consumer called when ground truth resets the pose (typically drivetrain::resetPose)
-     * @param visionPoseConsumer Consumer for vision pose estimates (typically drivetrain::addVisionMeasurement)
+     * @param poseResetConsumer Consumer called when ground truth resets the pose
+     *     (typically drivetrain::resetPose)
      */
     public SimWrapper(
             SwerveDrivetrain<TalonFX, TalonFX, CANcoder> drivetrain,
@@ -156,7 +154,8 @@ public class SimWrapper {
 
     /**
      * Proxy call to ground truth sim to cycle reset position.
-     * @param blueAlliancePose
+     *
+     * @param blueAlliancePose The pose to reset to if on blue alliance
      */
     public void cycleResetPosition(Pose2d blueAlliancePose) {
         m_groundTruthSim.cycleResetPosition(blueAlliancePose);
@@ -164,6 +163,7 @@ public class SimWrapper {
 
     /**
      * Get the simulation debug Field2d for visualization.
+     *
      * @return The VisionSystemSim's debug field, or null if not in simulation
      */
     public Field2d getSimDebugField() {
