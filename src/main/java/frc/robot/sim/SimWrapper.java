@@ -4,11 +4,8 @@ import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.swerve.SwerveDrivetrain;
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Transform2d;
-import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import frc.robot.Robot;
-import frc.robot.generated.TunerConstants;
 import frc.robot.sim.visionproducers.VisionSimFactory;
 import frc.robot.sim.visionproducers.VisionSimInterface;
 import java.util.function.Consumer;
@@ -26,17 +23,10 @@ import java.util.function.Consumer;
  * that the simulation code is only running under simulation conditions.
  */
 public class SimWrapper {
-    /** Module locations relative to robot center (from TunerConstants). */
-    private static final Translation2d[] MODULE_LOCATIONS = {
-        new Translation2d(TunerConstants.FrontLeft.LocationX, TunerConstants.FrontLeft.LocationY),
-        new Translation2d(TunerConstants.FrontRight.LocationX, TunerConstants.FrontRight.LocationY),
-        new Translation2d(TunerConstants.BackLeft.LocationX, TunerConstants.BackLeft.LocationY),
-        new Translation2d(TunerConstants.BackRight.LocationX, TunerConstants.BackRight.LocationY)
-    };
-
     private final SwerveDrivetrain<TalonFX, TalonFX, CANcoder> m_drivetrain;
     private final GroundTruthSimInterface m_groundTruthSim;
     private final VisionSimInterface m_visionSim;
+    private final ShowVisionOnField m_showVisionOnField;
 
     /**
      * Creates a new SimWrapper.
@@ -69,6 +59,10 @@ public class SimWrapper {
         if (m_visionSim == null) {
             throw new IllegalStateException("VisionSimInterface creation failed");
         }
+
+        // Create field visualization helper
+        Field2d debugField = m_visionSim.getSimDebugField();
+        m_showVisionOnField = new ShowVisionOnField(null, debugField);
     }
 
     /**
@@ -94,17 +88,11 @@ public class SimWrapper {
         Pose2d groundTruthPose = m_groundTruthSim.getGroundTruthPose();
         m_visionSim.simulationPeriodic(groundTruthPose);
 
-        // $TODO - Fix this here
         // Debug field visualization
-        var debugField = m_visionSim.getSimDebugField();
-        if (debugField != null) {
-            // Show the estimated pose (what odometry thinks)
-            debugField.getObject("EstimatedRobot").setPose(driveState.Pose);
-            debugField.getObject("EstimatedRobotModules").setPoses(getModulePoses(driveState));
-
-            // Show the ground truth pose (where the robot actually is in simulation)
-            debugField.getObject("GroundTruthRobot").setPose(groundTruthPose);
-        }
+        m_showVisionOnField.showEstimatedPoseAndWheels(
+            ShowVisionOnField.FieldType.SIMULATION_FIELD, driveState);
+        m_showVisionOnField.showGroundTruthPoseOnField(
+            ShowVisionOnField.FieldType.SIMULATION_FIELD, groundTruthPose);
     }
 
     /**
@@ -129,20 +117,6 @@ public class SimWrapper {
             double rotateX) {
         return SimJoystickOrientation.simTransformJoystickOrientation(
             degreesFieldForward, driveX, driveY, rotateX);
-    }
-
-    /**
-     * Get the Pose2d of each swerve module based on the current robot pose and module states.
-     */
-    // $TODO - Delete this
-    private Pose2d[] getModulePoses(SwerveDrivetrain.SwerveDriveState driveState) {
-        Pose2d[] modulePoses = new Pose2d[4];
-        for (int i = 0; i < 4; i++) {
-            modulePoses[i] = driveState.Pose.transformBy(
-                new Transform2d(MODULE_LOCATIONS[i], driveState.ModuleStates[i].angle)
-            );
-        }
-        return modulePoses;
     }
 
     /**

@@ -9,6 +9,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import frc.robot.sim.ShowVisionOnField;
 import java.util.Optional;
 
 
@@ -19,6 +20,7 @@ public class Robot extends TimedRobot {
     private Command m_autonomousCommand;
 
     private final RobotContainer m_robotContainer;
+    private ShowVisionOnField m_showVisionOnField;
 
     /* log and replay timestamp and joystick data */
     private final HootAutoReplay m_timeAndJoystickReplay = new HootAutoReplay()
@@ -30,6 +32,11 @@ public class Robot extends TimedRobot {
      */
     public Robot() {
         m_robotContainer = new RobotContainer();
+
+        if (Robot.isSimulation() && m_robotContainer.m_simWrapper != null) {
+            m_showVisionOnField = new ShowVisionOnField(
+                null, m_robotContainer.m_simWrapper.getSimDebugField());
+        }
     }
 
     @Override
@@ -44,20 +51,10 @@ public class Robot extends TimedRobot {
 
         m_robotContainer.m_limelightOdometry.periodic();
 
-        if (Robot.isSimulation()) {
+        if (Robot.isSimulation() && m_showVisionOnField != null) {
             Optional<Pose2d> showVisPose = m_robotContainer.m_limelightOdometry.getLatestVisPose();
-
-            showVisPose.ifPresentOrElse(
-                curpose ->
-                    m_robotContainer.m_simWrapper.getSimDebugField()
-                        .getObject("VisionEstimation")
-                        .setPose(curpose),
-                () -> {
-                    m_robotContainer.m_simWrapper
-                        .getSimDebugField()
-                        .getObject("VisionEstimation")
-                        .setPoses();
-                });
+            m_showVisionOnField.showPointInTimeVisionEstimate(
+                ShowVisionOnField.FieldType.SIMULATION_FIELD, showVisPose);
         }
 
         m_timeAndJoystickReplay.update();
