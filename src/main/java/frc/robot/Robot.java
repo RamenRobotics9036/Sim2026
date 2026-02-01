@@ -33,6 +33,7 @@ public class Robot extends TimedRobot {
     public Robot() {
         m_robotContainer = new RobotContainer();
 
+        // $VISIONSIM - Wrapper for sim features
         if (Robot.isSimulation() && m_robotContainer.m_simWrapper != null) {
             m_showVisionOnField = new ShowVisionOnField(
                 null, m_robotContainer.m_simWrapper.getSimDebugField());
@@ -41,7 +42,7 @@ public class Robot extends TimedRobot {
 
     @Override
     public void robotPeriodic() {
-        // $TODO - Wrapper for sim features
+        // $VISIONSIM - Wrapper for sim features
         if (Robot.isSimulation() && m_robotContainer.m_simWrapper != null) {
             // NOTE: We run the vision period FIRST in robotPeriodic, since it updates
             // NetworkTables with the limelight data, in-case any code in this loop
@@ -49,7 +50,11 @@ public class Robot extends TimedRobot {
             m_robotContainer.m_simWrapper.robotPeriodic();
         }
 
-        m_robotContainer.m_limelightOdometry.periodic();
+        // For now, we do vision odemetry only in simulation.  Eventually, this will
+        // be replaced by our real Vision Subsystem.
+        if (Robot.isSimulation()) {
+            m_robotContainer.m_limelightOdometry.periodic();
+        }
 
         if (Robot.isSimulation() && m_showVisionOnField != null) {
             Optional<Pose2d> showVisPose = m_robotContainer.m_limelightOdometry.getLatestVisPose();
@@ -111,7 +116,7 @@ public class Robot extends TimedRobot {
 
     @Override
     public void simulationPeriodic() {
-        // $TODO - Wrapper for sim features
+        // $VISIONSIM - Wrapper for sim features
         if (m_robotContainer.m_simWrapper != null) {
             m_robotContainer.m_simWrapper.simulationPeriodic();
         }

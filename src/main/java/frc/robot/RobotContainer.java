@@ -75,7 +75,7 @@ public class RobotContainer {
 
         configureBindings();
 
-        // $TODO - Wrapper for sim features
+        // $VISIONSIM - Wrapper for sim features
         if (Robot.isSimulation()) {
             m_simWrapper = new SimWrapper(
                 m_drivetrain,
@@ -85,7 +85,14 @@ public class RobotContainer {
             m_simWrapper = null;
         }
 
-        m_limelightOdometry = new LimelightOdometry(m_drivetrain::addVisionMeasurement);
+        // For now, we do vision odemetry only in simulation.  Eventually, this will
+        // be replaced by our real Vision Subsystem.
+        if (Robot.isSimulation()) {
+            m_limelightOdometry = new LimelightOdometry(m_drivetrain::addVisionMeasurement);
+        }
+        else {
+            m_limelightOdometry = null;
+        }
 
         // Warmup PathPlanner to avoid Java pauses
         FollowPathCommand.warmupCommand().schedule();
@@ -97,7 +104,7 @@ public class RobotContainer {
             double leftY = m_joystick.getLeftY();
             double rightX = m_joystick.getRightX();
 
-            // $TODO - Wrapper for sim features
+            // $VISIONSIM - Wrapper for sim features
             if (Robot.isSimulation()) {
                 JoystickInputsRecord newJoystickInputs = SimWrapper.transformJoystickOrientation(
                     m_drivetrain.getOperatorForwardDirection().getDegrees(),
@@ -157,7 +164,7 @@ public class RobotContainer {
             .and(m_joystick.x())
             .whileTrue(m_drivetrain.sysIdQuasistatic(Direction.kReverse));
 
-        // $TODO - Bumper buttons
+        // $VISIONSIM - Bumper buttons
         if (Robot.isSimulation()) {
             // In simulation, inject drift with right bumper to test vision correction
             m_joystick.rightBumper()
@@ -219,7 +226,7 @@ public class RobotContainer {
 
         m_drivetrain.resetPose(pose);
 
-        // $TODO - Clean reset
+        // $VISIONSIM - Clean reset
         if (Robot.isSimulation()) {
             m_simWrapper.resetSimPose(pose);
         }
